@@ -1,0 +1,16 @@
+import { Routes } from '@angular/router';
+import { AppLayout } from './app/layout/component/app.layout';
+import { Notfound } from './app/pages/notfound/notfound';
+
+export const appRoutes: Routes = [
+    {
+        path: '',
+        component: AppLayout,
+        children: [
+            { path: '', redirectTo: 'portfolios', pathMatch: 'full' },
+            { path: 'portfolios', loadChildren: () => import('./app/pryces/pages/pryces.routes') }
+        ]
+    },
+    { path: 'notfound', component: Notfound },
+    { path: '**', redirectTo: '/notfound' }
+];
