@@ -18,8 +18,23 @@ export interface Position {
     cost_base: string;
     unrealized_pnl_base: string;
     realized_pnl_base: string;
+    lifetime_pnl_base: string;
     total_return_pct: string;
+    lifetime_return_pct?: string | null;
     broker?: string | null;
+}
+
+export interface TransactionRow {
+    date: string;
+    type: string;
+    symbol: string;
+    quantity?: string | null;
+    price?: string | null;
+    amount?: string | null;
+    fee: string;
+    currency: string;
+    broker?: string | null;
+    portfolio?: string | null;
 }
 
 export interface ClosedPosition {

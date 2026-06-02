@@ -8,9 +8,10 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { LayoutService } from '@/app/layout/service/layout.service';
-import { Overview } from '../../models/portfolio.models';
+import { Overview, Position, TransactionRow } from '../../models/portfolio.models';
 import { PortfolioApiService } from '../../services/portfolio-api.service';
 import { money, percent, pnlClass, toNum } from '../../util/format';
+import { TransactionHistory } from '../components/transaction-history';
 
 @Component({
     selector: 'app-overview',
@@ -22,7 +23,8 @@ import { money, percent, pnlClass, toNum } from '../../util/format';
         TableModule,
         TagModule,
         ToastModule,
-        ProgressSpinnerModule
+        ProgressSpinnerModule,
+        TransactionHistory
     ],
     providers: [MessageService],
     template: `
@@ -91,13 +93,14 @@ import { money, percent, pnlClass, toNum } from '../../util/format';
                                     <th class="text-right">Value</th>
                                     <th class="text-right">Unrealized</th>
                                     <th class="text-right">Return</th>
+                                    <th class="text-right">Lifetime</th>
                                     <th>Broker</th>
                                 </tr>
                             </ng-template>
                             <ng-template #body let-pos>
-                                <tr>
+                                <tr class="cursor-pointer" (click)="openHistory(pos)">
                                     <td>
-                                        <div class="font-medium">{{ pos.symbol }}</div>
+                                        <div class="font-medium">{{ pos.symbol }} <i class="pi pi-history text-muted-color text-xs ml-1"></i></div>
                                         @if (pos.name) { <div class="text-muted-color text-sm">{{ pos.name }}</div> }
                                     </td>
                                     <td class="text-right">{{ pos.quantity }}</td>
@@ -105,11 +108,17 @@ import { money, percent, pnlClass, toNum } from '../../util/format';
                                     <td class="text-right">{{ fmt(pos.value_base) }}</td>
                                     <td class="text-right" [ngClass]="cls(pos.unrealized_pnl_base)">{{ fmt(pos.unrealized_pnl_base) }}</td>
                                     <td class="text-right" [ngClass]="cls(pos.total_return_pct)">{{ pct(pos.total_return_pct) }}</td>
+                                    <td class="text-right">
+                                        <div [ngClass]="cls(pos.lifetime_pnl_base)">{{ fmt(pos.lifetime_pnl_base) }}</div>
+                                        @if (pos.lifetime_return_pct) {
+                                            <div class="text-muted-color text-sm" [ngClass]="cls(pos.lifetime_return_pct)">{{ pct(pos.lifetime_return_pct) }}</div>
+                                        }
+                                    </td>
                                     <td>@if (pos.broker) { <p-tag [value]="pos.broker" severity="secondary" /> }</td>
                                 </tr>
                             </ng-template>
                             <ng-template #emptymessage>
-                                <tr><td colspan="7" class="text-center text-muted-color p-6">No holdings yet. Create a portfolio and import transactions.</td></tr>
+                                <tr><td colspan="8" class="text-center text-muted-color p-6">No holdings yet. Create a portfolio and import transactions.</td></tr>
                             </ng-template>
                         </p-table>
                     </div>
@@ -145,6 +154,16 @@ import { money, percent, pnlClass, toNum } from '../../util/format';
                 </div>
             </div>
         }
+
+        <app-transaction-history
+            [(visible)]="historyVisible"
+            [symbol]="historySymbol()"
+            [name]="historyName()"
+            [rows]="historyRows()"
+            [lifetimePnl]="historyLifetimePnl()"
+            [lifetimeReturn]="historyLifetimeReturn()"
+            [baseCurrency]="overview()?.portfolio?.base_currency ?? 'EUR'"
+            [showPortfolio]="true" />
     `
 })
 export class OverviewPage implements OnInit {
@@ -156,6 +175,13 @@ export class OverviewPage implements OnInit {
     loading = signal(false);
     chartData = signal<any>(null);
     chartOptions = signal<any>(null);
+
+    historyVisible = signal(false);
+    historySymbol = signal('');
+    historyName = signal<string | null>(null);
+    historyRows = signal<TransactionRow[]>([]);
+    historyLifetimePnl = signal('0');
+    historyLifetimeReturn = signal<string | null>(null);
 
     private get baseCurrency(): string {
         return this.overview()?.portfolio.base_currency ?? 'EUR';
@@ -189,6 +215,20 @@ export class OverviewPage implements OnInit {
                     detail: 'Could not reach the API. Is pryces-api running?'
                 });
             }
+        });
+    }
+
+    openHistory(pos: Position): void {
+        this.historySymbol.set(pos.symbol);
+        this.historyName.set(pos.name ?? null);
+        this.historyLifetimePnl.set(pos.lifetime_pnl_base);
+        this.historyLifetimeReturn.set(pos.lifetime_return_pct ?? null);
+        this.historyRows.set([]);
+        this.historyVisible.set(true);
+        this.api.overviewTransactions(pos.symbol).subscribe({
+            next: (rows) => this.historyRows.set(rows),
+            error: () =>
+                this.messages.add({ severity: 'error', summary: 'History failed', detail: pos.symbol })
         });
     }
 

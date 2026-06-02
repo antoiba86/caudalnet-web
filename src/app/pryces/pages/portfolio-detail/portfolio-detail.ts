@@ -15,9 +15,10 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 import { LayoutService } from '@/app/layout/service/layout.service';
-import { ImportResult, Portfolio } from '../../models/portfolio.models';
+import { ImportResult, Portfolio, Position, TransactionRow } from '../../models/portfolio.models';
 import { PortfolioApiService } from '../../services/portfolio-api.service';
 import { money, percent, pnlClass, toNum } from '../../util/format';
+import { TransactionHistory } from '../components/transaction-history';
 
 @Component({
     selector: 'app-portfolio-detail',
@@ -36,7 +37,8 @@ import { money, percent, pnlClass, toNum } from '../../util/format';
         FileUploadModule,
         MessageModule,
         ToastModule,
-        ProgressSpinnerModule
+        ProgressSpinnerModule,
+        TransactionHistory
     ],
     providers: [MessageService],
     template: `
@@ -94,13 +96,14 @@ import { money, percent, pnlClass, toNum } from '../../util/format';
                                     <th class="text-right">Unrealized</th>
                                     <th class="text-right">Realized</th>
                                     <th class="text-right">Return</th>
+                                    <th class="text-right">Lifetime</th>
                                     <th>Broker</th>
                                 </tr>
                             </ng-template>
                             <ng-template #body let-pos>
-                                <tr>
+                                <tr class="cursor-pointer" (click)="openHistory(pos)">
                                     <td>
-                                        <div class="font-medium">{{ pos.symbol }}</div>
+                                        <div class="font-medium">{{ pos.symbol }} <i class="pi pi-history text-muted-color text-xs ml-1"></i></div>
                                         @if (pos.name) { <div class="text-muted-color text-sm">{{ pos.name }}</div> }
                                     </td>
                                     <td class="text-right">{{ pos.quantity }}</td>
@@ -114,11 +117,17 @@ import { money, percent, pnlClass, toNum } from '../../util/format';
                                         {{ fmt(pos.realized_pnl_base, pf.base_currency) }}
                                     </td>
                                     <td class="text-right" [ngClass]="cls(pos.total_return_pct)">{{ pct(pos.total_return_pct) }}</td>
+                                    <td class="text-right">
+                                        <div [ngClass]="cls(pos.lifetime_pnl_base)">{{ fmt(pos.lifetime_pnl_base, pf.base_currency) }}</div>
+                                        @if (pos.lifetime_return_pct) {
+                                            <div class="text-muted-color text-sm" [ngClass]="cls(pos.lifetime_return_pct)">{{ pct(pos.lifetime_return_pct) }}</div>
+                                        }
+                                    </td>
                                     <td>@if (pos.broker) { <p-tag [value]="pos.broker" severity="secondary" /> }</td>
                                 </tr>
                             </ng-template>
                             <ng-template #emptymessage>
-                                <tr><td colspan="9" class="text-center text-muted-color p-6">No open positions.</td></tr>
+                                <tr><td colspan="10" class="text-center text-muted-color p-6">No open positions.</td></tr>
                             </ng-template>
                         </p-table>
                     </div>
@@ -202,6 +211,15 @@ import { money, percent, pnlClass, toNum } from '../../util/format';
                 <p-button label="Import" icon="pi pi-upload" [disabled]="!selectedFile || importing()" (onClick)="runImport()" />
             </ng-template>
         </p-dialog>
+
+        <app-transaction-history
+            [(visible)]="historyVisible"
+            [symbol]="historySymbol()"
+            [name]="historyName()"
+            [rows]="historyRows()"
+            [lifetimePnl]="historyLifetimePnl()"
+            [lifetimeReturn]="historyLifetimeReturn()"
+            [baseCurrency]="portfolio()?.base_currency ?? 'EUR'" />
     `
 })
 export class PortfolioDetail implements OnInit {
@@ -223,6 +241,13 @@ export class PortfolioDetail implements OnInit {
     broker: string | null = null;
     selectedFile: File | null = null;
     result = signal<ImportResult | null>(null);
+
+    historyVisible = signal(false);
+    historySymbol = signal('');
+    historyName = signal<string | null>(null);
+    historyRows = signal<TransactionRow[]>([]);
+    historyLifetimePnl = signal('0');
+    historyLifetimeReturn = signal<string | null>(null);
 
     brokerOptions = [
         { label: 'DEGIRO', value: 'degiro' },
@@ -259,6 +284,20 @@ export class PortfolioDetail implements OnInit {
                     this.messages.add({ severity: 'error', summary: 'Load failed', detail: 'Could not reach the API.' });
                 }
             }
+        });
+    }
+
+    openHistory(pos: Position): void {
+        this.historySymbol.set(pos.symbol);
+        this.historyName.set(pos.name ?? null);
+        this.historyLifetimePnl.set(pos.lifetime_pnl_base);
+        this.historyLifetimeReturn.set(pos.lifetime_return_pct ?? null);
+        this.historyRows.set([]);
+        this.historyVisible.set(true);
+        this.api.portfolioTransactions(this.name, pos.symbol).subscribe({
+            next: (rows) => this.historyRows.set(rows),
+            error: () =>
+                this.messages.add({ severity: 'error', summary: 'History failed', detail: pos.symbol })
         });
     }
 

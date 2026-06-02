@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@/environments/environment';
-import { CreatePortfolioBody, ImportResult, Overview, Portfolio, PortfolioSummary } from '../models/portfolio.models';
+import { CreatePortfolioBody, ImportResult, Overview, Portfolio, PortfolioSummary, TransactionRow } from '../models/portfolio.models';
 
 @Injectable({ providedIn: 'root' })
 export class PortfolioApiService {
@@ -11,6 +11,21 @@ export class PortfolioApiService {
 
     overview(): Observable<Overview> {
         return this.http.get<Overview>(`${environment.apiBaseUrl}/overview`);
+    }
+
+    portfolioTransactions(name: string, symbol: string): Observable<TransactionRow[]> {
+        const params = new HttpParams().set('symbol', symbol);
+        return this.http.get<TransactionRow[]>(
+            `${this.base}/${encodeURIComponent(name)}/transactions`,
+            { params }
+        );
+    }
+
+    overviewTransactions(symbol: string): Observable<TransactionRow[]> {
+        const params = new HttpParams().set('symbol', symbol);
+        return this.http.get<TransactionRow[]>(`${environment.apiBaseUrl}/overview/transactions`, {
+            params
+        });
     }
 
     list(): Observable<PortfolioSummary[]> {
