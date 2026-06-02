@@ -1,39 +1,56 @@
-# caudalnet-web
+# CaudalNet
 
-**CaudalNet** — the Angular frontend for the portfolio / net-worth tracker. Consumes the
-`pryces-api` FastAPI HTTP API (`/portfolios`, `/portfolios/{name}`, …) and renders
-portfolios, positions, and returns (XIRR / TWR).
+**See all your investments in one place.** CaudalNet is a self-hosted dashboard that
+pulls your trades from every broker into a single view and shows what they're really
+worth — current value, profit, dividends, and proper money- and time-weighted returns.
 
-Bootstrapped from [Sakai](https://github.com/primefaces/sakai-ng) by PrimeTek
-(MIT-licensed Angular admin template, Angular 21 + PrimeNG). The upstream git
-history has been removed — this is an independent repository.
+> CaudalNet is the web app. It talks to a small companion API ([`pryces-api`](#backend))
+> that does the number-crunching and fetches live prices.
 
-## Relationship to the backend
+## What you get
 
-This is one of two sibling repositories under the `pryces/` workspace container:
+- 📊 **Net-worth overview** — one dashboard rolling up every portfolio: total value,
+  total profit, and a single XIRR / TWR across everything.
+- 🏦 **A portfolio per broker** — DEGIRO, Interactive Brokers, Renta 4 funds, or a plain
+  JSON ledger. Import the broker's export file and it's parsed automatically.
+- 📈 **Real returns, not guesses** — realized + unrealized P&L, dividends, **XIRR**
+  (money-weighted) and **TWR** (time-weighted), per position and per portfolio.
+- 🧾 **Per-stock history** — click any holding to see its full buy/sell timeline and its
+  lifetime return.
+- 💸 **Closed positions** — sold-out holdings stay visible with their realized gains.
+- 🌍 **Multi-currency & funds** — stocks, ETFs and mutual funds, priced live (and
+  historically) via Yahoo Finance; foreign holdings converted to your base currency.
+- 🌗 **Light / dark theme**, responsive layout.
 
-```
-pryces/                 # workspace container (not a git repo)
-├── pryces-api/         # backend  — Python, hexagonal, FastAPI   (git: antoiba86/pryces)
-└── caudalnet-web/      # frontend — this repo (CaudalNet), Angular + PrimeNG  (independent git)
-```
+## Quick start
 
-## Develop
+**Prerequisites:** [Node.js](https://nodejs.org) 20+ and the running API (see below).
 
 ```bash
 npm install
-npm start            # ng serve → http://localhost:4200
+npm start          # http://localhost:4200
 ```
 
-The API runs separately:
+That's it — open the app, create your first portfolio, then import a broker file.
+
+### Backend
+
+CaudalNet needs the `pryces-api` service running (it serves your portfolios and prices):
 
 ```bash
 cd ../pryces-api
-uv run uvicorn pryces.presentation.api.main:app --port 8000
+uv run python -m uvicorn pryces.presentation.api.main:app --port 8000
 ```
 
-CORS in the API already allows `http://localhost:*`.
+The app talks to `http://localhost:8000` by default (configurable in
+`src/environments/`). The API already allows requests from `http://localhost:*`.
+
+## Tech stack
+
+Angular 21 · PrimeNG · Chart.js · TypeScript. Bootstrapped from the
+[Sakai](https://github.com/primefaces/sakai-ng) admin template.
 
 ## License
 
-App code derived from Sakai is MIT (© 2018–2026 PrimeTek); see `LICENSE.md`.
+[MIT](LICENSE.md) © 2026 Antonio Ibáñez. Built on the MIT-licensed Sakai template and
+PrimeNG (© PrimeTek) — thanks to the PrimeTek team.

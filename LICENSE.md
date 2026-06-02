@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright (c) 2018-2026 PrimeTek
+Copyright (c) 2026 Antonio Ibáñez
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+---
+
+CaudalNet was bootstrapped from the Sakai admin template
+(https://github.com/primefaces/sakai-ng), Copyright (c) 2018-2026 PrimeTek,
+which is also licensed under the MIT License; those portions remain under
+PrimeTek's copyright. PrimeNG and its themes are likewise MIT-licensed.
