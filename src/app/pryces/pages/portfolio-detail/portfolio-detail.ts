@@ -1,23 +1,24 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ChartModule } from 'primeng/chart';
 import { DialogModule } from 'primeng/dialog';
 import { FileUploadModule } from 'primeng/fileupload';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
-import { LayoutService } from '@/app/layout/service/layout.service';
 import { ImportResult, Portfolio, Position, TransactionRow } from '../../models/portfolio.models';
 import { PortfolioApiService } from '../../services/portfolio-api.service';
-import { money, percent, pnlClass, toNum } from '../../util/format';
+import { money, percent, pnlClass } from '../../util/format';
+import { AllocationChart } from '../components/allocation-chart';
+import { ClosedPositionsTable } from '../components/closed-positions-table';
+import { PositionsTable } from '../components/positions-table';
+import { StatCard, StatCards } from '../components/stat-cards';
 import { TransactionHistory } from '../components/transaction-history';
 
 @Component({
@@ -29,15 +30,17 @@ import { TransactionHistory } from '../components/transaction-history';
         RouterModule,
         ToolbarModule,
         ButtonModule,
-        ChartModule,
         TableModule,
-        TagModule,
         DialogModule,
         SelectModule,
         FileUploadModule,
         MessageModule,
         ToastModule,
         ProgressSpinnerModule,
+        StatCards,
+        AllocationChart,
+        PositionsTable,
+        ClosedPositionsTable,
         TransactionHistory
     ],
     providers: [MessageService],
@@ -57,111 +60,22 @@ import { TransactionHistory } from '../components/transaction-history';
         @if (loading()) {
             <div class="flex justify-center p-8"><p-progressspinner /></div>
         } @else if (portfolio(); as pf) {
-            <!-- Stat cards -->
-            <div class="grid grid-cols-12 gap-8 mb-2">
-                <div class="col-span-12 md:col-span-6 xl:col-span-3" *ngFor="let s of stats()">
-                    <div class="card mb-0">
-                        <span class="block text-muted-color font-medium mb-2">{{ s.label }}</span>
-                        <div class="font-medium text-2xl" [ngClass]="s.cls">{{ s.value }}</div>
-                    </div>
-                </div>
-            </div>
+            <app-stat-cards [stats]="stats()" />
 
             <div class="grid grid-cols-12 gap-8">
-                <!-- Allocation chart -->
                 <div class="col-span-12 xl:col-span-4">
-                    <div class="card flex flex-col items-center">
-                        <div class="font-semibold text-xl mb-4 self-start">Allocation</div>
-                        @if (pf.positions.length) {
-                            <p-chart type="doughnut" [data]="chartData()" [options]="chartOptions()"
-                                class="w-full max-w-80" />
-                        } @else {
-                            <span class="text-muted-color p-6">No positions to chart.</span>
-                        }
-                    </div>
+                    <app-allocation-chart [positions]="pf.positions" />
                 </div>
 
-                <!-- Positions table -->
                 <div class="col-span-12 xl:col-span-8">
-                    <div class="card">
-                        <div class="font-semibold text-xl mb-4">Positions</div>
-                        <p-table [value]="pf.positions" dataKey="symbol" [scrollable]="true">
-                            <ng-template #header>
-                                <tr>
-                                    <th>Symbol</th>
-                                    <th class="text-right">Qty</th>
-                                    <th class="text-right">Avg cost</th>
-                                    <th class="text-right">Price</th>
-                                    <th class="text-right">Value</th>
-                                    <th class="text-right">Unrealized</th>
-                                    <th class="text-right">Realized</th>
-                                    <th class="text-right">Return</th>
-                                    <th class="text-right">Lifetime</th>
-                                    <th>Broker</th>
-                                </tr>
-                            </ng-template>
-                            <ng-template #body let-pos>
-                                <tr class="cursor-pointer" (click)="openHistory(pos)">
-                                    <td>
-                                        <div class="font-medium">{{ pos.symbol }} <i class="pi pi-history text-muted-color text-xs ml-1"></i></div>
-                                        @if (pos.name) { <div class="text-muted-color text-sm">{{ pos.name }}</div> }
-                                    </td>
-                                    <td class="text-right">{{ pos.quantity }}</td>
-                                    <td class="text-right">{{ fmt(pos.avg_cost, pos.currency) }}</td>
-                                    <td class="text-right">{{ fmt(pos.price, pos.currency) }}</td>
-                                    <td class="text-right">{{ fmt(pos.value_base, pf.base_currency) }}</td>
-                                    <td class="text-right" [ngClass]="cls(pos.unrealized_pnl_base)">
-                                        {{ fmt(pos.unrealized_pnl_base, pf.base_currency) }}
-                                    </td>
-                                    <td class="text-right" [ngClass]="cls(pos.realized_pnl_base)">
-                                        {{ fmt(pos.realized_pnl_base, pf.base_currency) }}
-                                    </td>
-                                    <td class="text-right" [ngClass]="cls(pos.total_return_pct)">{{ pct(pos.total_return_pct) }}</td>
-                                    <td class="text-right">
-                                        <div [ngClass]="cls(pos.lifetime_pnl_base)">{{ fmt(pos.lifetime_pnl_base, pf.base_currency) }}</div>
-                                        @if (pos.lifetime_return_pct) {
-                                            <div class="text-muted-color text-sm" [ngClass]="cls(pos.lifetime_return_pct)">{{ pct(pos.lifetime_return_pct) }}</div>
-                                        }
-                                    </td>
-                                    <td>@if (pos.broker) { <p-tag [value]="pos.broker" severity="secondary" /> }</td>
-                                </tr>
-                            </ng-template>
-                            <ng-template #emptymessage>
-                                <tr><td colspan="10" class="text-center text-muted-color p-6">No open positions.</td></tr>
-                            </ng-template>
-                        </p-table>
-                    </div>
-
-                    @if (pf.closed_positions.length) {
-                        <div class="card">
-                            <div class="font-semibold text-xl mb-4">Closed positions (sold)</div>
-                            <p-table [value]="pf.closed_positions" dataKey="symbol">
-                                <ng-template #header>
-                                    <tr>
-                                        <th>Symbol</th>
-                                        <th class="text-right">Hold period</th>
-                                        <th class="text-right">Realized P&amp;L</th>
-                                        <th class="text-right">ROI</th>
-                                        <th>Broker</th>
-                                    </tr>
-                                </ng-template>
-                                <ng-template #body let-c>
-                                    <tr>
-                                        <td>
-                                            <div class="font-medium">{{ c.symbol }}</div>
-                                            @if (c.name) { <div class="text-muted-color text-sm">{{ c.name }}</div> }
-                                        </td>
-                                        <td class="text-right">{{ holdPeriod(c.hold_period_days) }}</td>
-                                        <td class="text-right" [ngClass]="cls(c.realized_pnl_base)">
-                                            {{ fmt(c.realized_pnl_base, pf.base_currency) }}
-                                        </td>
-                                        <td class="text-right" [ngClass]="cls(c.realized_return_pct)">{{ pct(c.realized_return_pct) }}</td>
-                                        <td>@if (c.broker) { <p-tag [value]="c.broker" severity="secondary" /> }</td>
-                                    </tr>
-                                </ng-template>
-                            </p-table>
-                        </div>
-                    }
+                    <app-positions-table
+                        title="Positions"
+                        [positions]="pf.positions"
+                        [baseCurrency]="pf.base_currency"
+                        (historyClick)="openHistory($event)" />
+                    <app-closed-positions-table
+                        [closedPositions]="pf.closed_positions"
+                        [baseCurrency]="pf.base_currency" />
 
                     @if (pf.manual_assets.length) {
                         <div class="card">
@@ -225,16 +139,11 @@ import { TransactionHistory } from '../components/transaction-history';
 export class PortfolioDetail implements OnInit {
     private readonly api = inject(PortfolioApiService);
     private readonly route = inject(ActivatedRoute);
-    private readonly router = inject(Router);
     private readonly messages = inject(MessageService);
-    private readonly layout = inject(LayoutService);
 
     name = '';
     portfolio = signal<Portfolio | null>(null);
     loading = signal(false);
-
-    chartData = signal<any>(null);
-    chartOptions = signal<any>(null);
 
     importVisible = false;
     importing = signal(false);
@@ -255,15 +164,6 @@ export class PortfolioDetail implements OnInit {
         { label: 'JSON ledger', value: 'json' }
     ];
 
-    // Re-theme the chart when dark mode toggles (Sakai pattern).
-    private readonly themeEffect = effect(() => {
-        this.layout.layoutConfig().darkTheme;
-        const pf = this.portfolio();
-        if (pf) {
-            setTimeout(() => this.buildChart(pf), 100);
-        }
-    });
-
     ngOnInit(): void {
         this.name = this.route.snapshot.paramMap.get('name') ?? '';
         this.load();
@@ -275,7 +175,6 @@ export class PortfolioDetail implements OnInit {
             next: (pf) => {
                 this.portfolio.set(pf);
                 this.loading.set(false);
-                this.buildChart(pf);
             },
             error: (err) => {
                 this.loading.set(false);
@@ -301,7 +200,7 @@ export class PortfolioDetail implements OnInit {
         });
     }
 
-    stats() {
+    stats(): StatCard[] {
         const pf = this.portfolio();
         if (!pf) return [];
         return [
@@ -315,45 +214,8 @@ export class PortfolioDetail implements OnInit {
         ];
     }
 
-    holdPeriod(days: number | null | undefined): string {
-        if (days === null || days === undefined) {
-            return '—';
-        }
-        if (days < 31) {
-            return `${days}d`;
-        }
-        if (days < 365) {
-            return `${Math.round(days / 30)}mo`;
-        }
-        return `${(days / 365).toFixed(1)}y`;
-    }
-
-    private buildChart(pf: Portfolio): void {
-        const style = getComputedStyle(document.documentElement);
-        const textColor = style.getPropertyValue('--text-color');
-        const positions = [...pf.positions].sort((a, b) => toNum(b.value_base) - toNum(a.value_base));
-        const palette = ['--p-primary-500', '--p-primary-300', '--p-primary-200', '--p-cyan-400', '--p-orange-400', '--p-purple-400', '--p-pink-400', '--p-teal-400'];
-        const colors = positions.map((_, i) => style.getPropertyValue(palette[i % palette.length]).trim());
-
-        this.chartData.set({
-            labels: positions.map((p) => p.symbol),
-            datasets: [{ data: positions.map((p) => toNum(p.value_base)), backgroundColor: colors }]
-        });
-        this.chartOptions.set({
-            maintainAspectRatio: false,
-            aspectRatio: 1,
-            plugins: { legend: { labels: { color: textColor, usePointStyle: true } } }
-        });
-    }
-
     fmt(value: string, currency: string): string {
         return money(value, currency);
-    }
-    pct(value: string | null | undefined): string {
-        return percent(value);
-    }
-    cls(value: string | null | undefined): string {
-        return pnlClass(value);
     }
 
     openImport(): void {
