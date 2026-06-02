@@ -91,14 +91,18 @@ import { money, percent, pnlClass, toNum } from '../../util/format';
                                     <th class="text-right">Avg cost</th>
                                     <th class="text-right">Price</th>
                                     <th class="text-right">Value</th>
-                                    <th class="text-right">P&amp;L</th>
+                                    <th class="text-right">Unrealized</th>
+                                    <th class="text-right">Realized</th>
                                     <th class="text-right">Return</th>
                                     <th>Broker</th>
                                 </tr>
                             </ng-template>
                             <ng-template #body let-pos>
                                 <tr>
-                                    <td class="font-medium">{{ pos.symbol }}</td>
+                                    <td>
+                                        <div class="font-medium">{{ pos.symbol }}</div>
+                                        @if (pos.name) { <div class="text-muted-color text-sm">{{ pos.name }}</div> }
+                                    </td>
                                     <td class="text-right">{{ pos.quantity }}</td>
                                     <td class="text-right">{{ fmt(pos.avg_cost, pos.currency) }}</td>
                                     <td class="text-right">{{ fmt(pos.price, pos.currency) }}</td>
@@ -106,15 +110,49 @@ import { money, percent, pnlClass, toNum } from '../../util/format';
                                     <td class="text-right" [ngClass]="cls(pos.unrealized_pnl_base)">
                                         {{ fmt(pos.unrealized_pnl_base, pf.base_currency) }}
                                     </td>
+                                    <td class="text-right" [ngClass]="cls(pos.realized_pnl_base)">
+                                        {{ fmt(pos.realized_pnl_base, pf.base_currency) }}
+                                    </td>
                                     <td class="text-right" [ngClass]="cls(pos.total_return_pct)">{{ pct(pos.total_return_pct) }}</td>
                                     <td>@if (pos.broker) { <p-tag [value]="pos.broker" severity="secondary" /> }</td>
                                 </tr>
                             </ng-template>
                             <ng-template #emptymessage>
-                                <tr><td colspan="8" class="text-center text-muted-color p-6">No positions.</td></tr>
+                                <tr><td colspan="9" class="text-center text-muted-color p-6">No open positions.</td></tr>
                             </ng-template>
                         </p-table>
                     </div>
+
+                    @if (pf.closed_positions.length) {
+                        <div class="card">
+                            <div class="font-semibold text-xl mb-4">Closed positions (sold)</div>
+                            <p-table [value]="pf.closed_positions" dataKey="symbol">
+                                <ng-template #header>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th class="text-right">Hold period</th>
+                                        <th class="text-right">Realized P&amp;L</th>
+                                        <th class="text-right">ROI</th>
+                                        <th>Broker</th>
+                                    </tr>
+                                </ng-template>
+                                <ng-template #body let-c>
+                                    <tr>
+                                        <td>
+                                            <div class="font-medium">{{ c.symbol }}</div>
+                                            @if (c.name) { <div class="text-muted-color text-sm">{{ c.name }}</div> }
+                                        </td>
+                                        <td class="text-right">{{ holdPeriod(c.hold_period_days) }}</td>
+                                        <td class="text-right" [ngClass]="cls(c.realized_pnl_base)">
+                                            {{ fmt(c.realized_pnl_base, pf.base_currency) }}
+                                        </td>
+                                        <td class="text-right" [ngClass]="cls(c.realized_return_pct)">{{ pct(c.realized_return_pct) }}</td>
+                                        <td>@if (c.broker) { <p-tag [value]="c.broker" severity="secondary" /> }</td>
+                                    </tr>
+                                </ng-template>
+                            </p-table>
+                        </div>
+                    }
 
                     @if (pf.manual_assets.length) {
                         <div class="card">
@@ -229,11 +267,26 @@ export class PortfolioDetail implements OnInit {
         if (!pf) return [];
         return [
             { label: 'Total value', value: money(pf.total_value, pf.base_currency), cls: '' },
+            { label: 'Total profit', value: money(pf.total_profit, pf.base_currency), cls: pnlClass(pf.total_profit) },
             { label: 'Unrealized P&L', value: money(pf.total_unrealized_pnl, pf.base_currency), cls: pnlClass(pf.total_unrealized_pnl) },
+            { label: 'Realized P&L', value: money(pf.total_realized_pnl, pf.base_currency), cls: pnlClass(pf.total_realized_pnl) },
             { label: 'Total return', value: percent(pf.total_return_pct), cls: pnlClass(pf.total_return_pct) },
             { label: 'XIRR', value: percent(pf.xirr_pct), cls: pnlClass(pf.xirr_pct) },
             { label: 'TWR', value: percent(pf.twr_pct), cls: pnlClass(pf.twr_pct) }
         ];
+    }
+
+    holdPeriod(days: number | null | undefined): string {
+        if (days === null || days === undefined) {
+            return '—';
+        }
+        if (days < 31) {
+            return `${days}d`;
+        }
+        if (days < 365) {
+            return `${Math.round(days / 30)}mo`;
+        }
+        return `${(days / 365).toFixed(1)}y`;
     }
 
     private buildChart(pf: Portfolio): void {
