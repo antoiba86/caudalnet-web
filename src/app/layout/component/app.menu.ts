@@ -25,7 +25,10 @@ export class AppMenu {
         this.model = [
             {
                 label: 'Portfolio',
-                items: [{ label: 'Portfolios', icon: 'pi pi-fw pi-wallet', routerLink: ['/portfolios'] }]
+                items: [
+                    { label: 'Overview', icon: 'pi pi-fw pi-chart-pie', routerLink: ['/'] },
+                    { label: 'Portfolios', icon: 'pi pi-fw pi-wallet', routerLink: ['/portfolios'] }
+                ]
             }
         ];
     }

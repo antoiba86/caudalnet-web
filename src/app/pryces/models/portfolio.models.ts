@@ -61,6 +61,19 @@ export interface CreatePortfolioBody {
     name?: string | null;
 }
 
+export interface PortfolioBreakdownItem {
+    name: string;
+    base_currency: string;
+    total_value: string;
+    total_profit: string;
+    total_return_pct: string;
+}
+
+export interface Overview {
+    portfolio: Portfolio;
+    breakdown: PortfolioBreakdownItem[];
+}
+
 export interface ImportResult {
     broker: string;
     parsed: number;

@@ -2,12 +2,16 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@/environments/environment';
-import { CreatePortfolioBody, ImportResult, Portfolio, PortfolioSummary } from '../models/portfolio.models';
+import { CreatePortfolioBody, ImportResult, Overview, Portfolio, PortfolioSummary } from '../models/portfolio.models';
 
 @Injectable({ providedIn: 'root' })
 export class PortfolioApiService {
     private readonly http = inject(HttpClient);
     private readonly base = `${environment.apiBaseUrl}/portfolios`;
+
+    overview(): Observable<Overview> {
+        return this.http.get<Overview>(`${environment.apiBaseUrl}/overview`);
+    }
 
     list(): Observable<PortfolioSummary[]> {
         return this.http.get<PortfolioSummary[]>(this.base);
