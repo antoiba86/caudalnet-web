@@ -1,8 +1,8 @@
-# pryces-web
+# caudalnet-web
 
-Angular frontend for the **Pryces** portfolio tracker. Consumes the `pryces-api`
-FastAPI HTTP API (`/portfolios`, `/portfolios/{name}`, …) and renders portfolios,
-positions, and returns (XIRR / TWR).
+**CaudalNet** — the Angular frontend for the portfolio / net-worth tracker. Consumes the
+`pryces-api` FastAPI HTTP API (`/portfolios`, `/portfolios/{name}`, …) and renders
+portfolios, positions, and returns (XIRR / TWR).
 
 Bootstrapped from [Sakai](https://github.com/primefaces/sakai-ng) by PrimeTek
 (MIT-licensed Angular admin template, Angular 21 + PrimeNG). The upstream git
@@ -15,7 +15,7 @@ This is one of two sibling repositories under the `pryces/` workspace container:
 ```
 pryces/                 # workspace container (not a git repo)
 ├── pryces-api/         # backend  — Python, hexagonal, FastAPI   (git: antoiba86/pryces)
-└── pryces-web/         # frontend — this repo, Angular + PrimeNG  (independent git)
+└── caudalnet-web/      # frontend — this repo (CaudalNet), Angular + PrimeNG  (independent git)
 ```
 
 ## Develop

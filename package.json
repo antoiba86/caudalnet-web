@@ -1,6 +1,7 @@
 {
-    "name": "pryces-web",
+    "name": "caudalnet-web",
     "version": "0.1.0",
+    "description": "CaudalNet — Angular + PrimeNG dashboard for tracking your net worth across brokers: portfolios, positions, realized/unrealized P&L, dividends, and money-weighted (XIRR) / time-weighted (TWR) returns.",
     "scripts": {
         "ng": "ng",
         "start": "ng serve",

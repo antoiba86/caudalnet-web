@@ -3,7 +3,7 @@
     "version": 1,
     "newProjectRoot": "projects",
     "projects": {
-        "pryces-web": {
+        "caudalnet-web": {
             "projectType": "application",
             "schematics": {
                 "@schematics/angular:component": {
@@ -17,7 +17,7 @@
                 "build": {
                     "builder": "@angular-devkit/build-angular:application",
                     "options": {
-                        "outputPath": "dist/pryces-web",
+                        "outputPath": "dist/caudalnet-web",
                         "index": "src/index.html",
                         "browser": "src/main.ts",
                         "tsConfig": "tsconfig.app.json",
@@ -68,10 +68,10 @@
                     "builder": "@angular-devkit/build-angular:dev-server",
                     "configurations": {
                         "production": {
-                            "buildTarget": "pryces-web:build:production"
+                            "buildTarget": "caudalnet-web:build:production"
                         },
                         "development": {
-                            "buildTarget": "pryces-web:build:development"
+                            "buildTarget": "caudalnet-web:build:development"
                         }
                     },
                     "defaultConfiguration": "development"
