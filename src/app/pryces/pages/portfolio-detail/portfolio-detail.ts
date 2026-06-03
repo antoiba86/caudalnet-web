@@ -106,10 +106,11 @@ import { TransactionHistory } from '../components/transaction-history';
                 <div class="flex flex-col gap-2">
                     <label for="broker">Broker (optional — auto-detected if blank)</label>
                     <p-select inputId="broker" [(ngModel)]="broker" [options]="brokerOptions" optionLabel="label"
-                        optionValue="value" placeholder="Auto-detect" [showClear]="true" fluid />
+                        optionValue="value" placeholder="Auto-detect" [showClear]="true" appendTo="body" fluid />
                 </div>
                 <p-fileupload mode="basic" chooseLabel="Choose file" [auto]="false" [customUpload]="true"
-                    accept=".csv,text/csv" (onSelect)="onSelect($event)" />
+                    accept=".csv,.xls,.xlsx,.json,text/csv,application/vnd.ms-excel,application/json"
+                    (onSelect)="onSelect($event)" />
                 @if (selectedFile) { <span class="text-muted-color text-sm">Selected: {{ selectedFile.name }}</span> }
 
                 @if (result(); as r) {
@@ -161,6 +162,8 @@ export class PortfolioDetail implements OnInit {
     brokerOptions = [
         { label: 'DEGIRO', value: 'degiro' },
         { label: 'Interactive Brokers', value: 'ibkr' },
+        { label: 'Renta 4 (funds .xls)', value: 'renta4' },
+        { label: 'Horos (movements CSV)', value: 'horos' },
         { label: 'JSON ledger', value: 'json' }
     ];
 
