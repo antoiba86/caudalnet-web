@@ -25,6 +25,7 @@ export interface Position {
 }
 
 export interface TransactionRow {
+    id: string;
     date: string;
     type: string;
     symbol: string;
@@ -35,6 +36,18 @@ export interface TransactionRow {
     currency: string;
     broker?: string | null;
     portfolio?: string | null;
+}
+
+// Body for hand-adding or editing a transaction (POST manual / PATCH).
+export interface TransactionInput {
+    date: string;
+    type: string;
+    symbol: string;
+    currency: string;
+    quantity?: string | null;
+    price?: string | null;
+    amount?: string | null;
+    fee?: string | null;
 }
 
 export interface ClosedPosition {
