@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, model } from '@angular/core';
+import { Component, computed, input, model, output } from '@angular/core';
+import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -9,10 +10,9 @@ import { money, percent, pnlClass } from '../../util/format';
 @Component({
     selector: 'app-transaction-history',
     standalone: true,
-    imports: [CommonModule, DialogModule, TableModule, TagModule],
+    imports: [CommonModule, ButtonModule, DialogModule, TableModule, TagModule],
     template: `
-        <p-dialog [(visible)]="visible" [modal]="true" [style]="{ width: '640px' }"
-            [header]="symbol() + (name() ? ' — ' + name() : '')">
+        <p-dialog [(visible)]="visible" [modal]="true" [style]="{ width: '720px' }" [header]="symbol() + (name() ? ' — ' + name() : '')">
             <div class="flex flex-wrap gap-6 mb-4">
                 <div>
                     <span class="block text-muted-color text-sm">Lifetime P&amp;L</span>
@@ -24,7 +24,7 @@ import { money, percent, pnlClass } from '../../util/format';
                 </div>
             </div>
 
-            <p-table [value]="rows()" dataKey="date" [scrollable]="true">
+            <p-table [value]="rows()" dataKey="id" [scrollable]="true">
                 <ng-template #header>
                     <tr>
                         <th>Date</th>
@@ -32,8 +32,13 @@ import { money, percent, pnlClass } from '../../util/format';
                         <th class="text-right">Qty / amount</th>
                         <th class="text-right">Price</th>
                         <th class="text-right">Fee</th>
-                        @if (showPortfolio()) { <th>Portfolio</th> }
+                        @if (showPortfolio()) {
+                            <th>Portfolio</th>
+                        }
                         <th>Broker</th>
+                        @if (editable()) {
+                            <th class="text-right">Actions</th>
+                        }
                     </tr>
                 </ng-template>
                 <ng-template #body let-t>
@@ -43,12 +48,26 @@ import { money, percent, pnlClass } from '../../util/format';
                         <td class="text-right">{{ t.quantity ?? t.amount ?? '—' }}</td>
                         <td class="text-right">{{ t.price ? money(t.price, t.currency) : '—' }}</td>
                         <td class="text-right">{{ money(t.fee, t.currency) }}</td>
-                        @if (showPortfolio()) { <td>{{ t.portfolio }}</td> }
-                        <td>@if (t.broker) { <p-tag [value]="t.broker" severity="secondary" /> }</td>
+                        @if (showPortfolio()) {
+                            <td>{{ t.portfolio }}</td>
+                        }
+                        <td>
+                            @if (t.broker) {
+                                <p-tag [value]="t.broker" severity="secondary" />
+                            }
+                        </td>
+                        @if (editable()) {
+                            <td class="text-right whitespace-nowrap">
+                                <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" severity="secondary" (onClick)="edit.emit(t)" />
+                                <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger" (onClick)="remove.emit(t)" />
+                            </td>
+                        }
                     </tr>
                 </ng-template>
                 <ng-template #emptymessage>
-                    <tr><td colspan="7" class="text-center text-muted-color p-6">No transactions.</td></tr>
+                    <tr>
+                        <td [attr.colspan]="columnCount()" class="text-center text-muted-color p-6">No transactions.</td>
+                    </tr>
                 </ng-template>
             </p-table>
         </p-dialog>
@@ -63,6 +82,11 @@ export class TransactionHistory {
     lifetimeReturn = input<string | null | undefined>(null);
     baseCurrency = input<string>('EUR');
     showPortfolio = input<boolean>(false);
+    editable = input<boolean>(false);
+    edit = output<TransactionRow>();
+    remove = output<TransactionRow>();
+
+    columnCount = computed(() => 6 + (this.showPortfolio() ? 1 : 0) + (this.editable() ? 1 : 0));
 
     money(value: string | null | undefined, currency: string): string {
         return money(value, currency);
