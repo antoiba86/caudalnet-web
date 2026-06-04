@@ -27,12 +27,18 @@ import { money, percent, pnlClass } from '../../util/format';
                         <tr>
                             <td>
                                 <div class="font-medium">{{ c.symbol }}</div>
-                                @if (c.name) { <div class="text-muted-color text-sm">{{ c.name }}</div> }
+                                @if (c.name) {
+                                    <div class="text-muted-color text-sm">{{ c.name }}</div>
+                                }
                             </td>
                             <td class="text-right">{{ holdPeriod(c.hold_period_days) }}</td>
                             <td class="text-right" [ngClass]="cls(c.realized_pnl_base)">{{ fmt(c.realized_pnl_base) }}</td>
                             <td class="text-right" [ngClass]="cls(c.realized_return_pct)">{{ pct(c.realized_return_pct) }}</td>
-                            <td>@if (c.broker) { <p-tag [value]="c.broker" severity="secondary" /> }</td>
+                            <td>
+                                @if (c.broker) {
+                                    <p-tag [value]="c.broker" severity="secondary" />
+                                }
+                            </td>
                         </tr>
                     </ng-template>
                 </p-table>

@@ -9,8 +9,7 @@ export const appRoutes: Routes = [
         children: [
             {
                 path: '',
-                loadComponent: () =>
-                    import('./app/pryces/pages/overview/overview').then((m) => m.OverviewPage)
+                loadComponent: () => import('./app/pryces/pages/overview/overview').then((m) => m.OverviewPage)
             },
             { path: 'portfolios', loadChildren: () => import('./app/pryces/pages/pryces.routes') }
         ]

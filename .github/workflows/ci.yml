@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref (e.g. rapid pushes to a PR).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Format check & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22 # Angular 21 supports ^20.19 || ^22.12 || ^24; 22 is the active LTS
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npx prettier --check "**/*.{js,mjs,ts,mts,d.ts,html}"
+
+      - name: Build (production)
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: caudalnet-web-dist
+          path: dist/caudalnet-web
+          if-no-files-found: error
+          retention-days: 7
+
+      # NOTE: linting is intentionally omitted — eslint.config.js is still a
+      # legacy .eslintrc-style config and crashes under ESLint 9 flat config.
+      # Add a `lint` step here once it's migrated to flat config.
+
+      # NOTE: no unit-test step yet — the project has no .spec.ts files. Once specs
+      # exist, add a karma.conf.js with a no-sandbox headless launcher (CI Chrome
+      # can't sandbox) and run it here:
+      #   customLaunchers:
+      #     ChromeHeadlessCI: { base: 'ChromeHeadless', flags: ['--no-sandbox', '--disable-gpu'] }
+      #   - run: npm run test -- --watch=false --browsers=ChromeHeadlessCI --code-coverage

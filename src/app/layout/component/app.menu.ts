@@ -16,7 +16,7 @@ import { AppMenuitem } from './app.menuitem';
                 <li class="menu-separator"></li>
             }
         }
-    </ul> `,
+    </ul> `
 })
 export class AppMenu {
     model: MenuItem[] = [];

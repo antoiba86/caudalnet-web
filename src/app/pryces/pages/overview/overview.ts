@@ -17,18 +17,7 @@ import { TransactionHistory } from '../components/transaction-history';
 @Component({
     selector: 'app-overview',
     standalone: true,
-    imports: [
-        CommonModule,
-        RouterModule,
-        TableModule,
-        ToastModule,
-        ProgressSpinnerModule,
-        StatCards,
-        AllocationChart,
-        PositionsTable,
-        ClosedPositionsTable,
-        TransactionHistory
-    ],
+    imports: [CommonModule, RouterModule, TableModule, ToastModule, ProgressSpinnerModule, StatCards, AllocationChart, PositionsTable, ClosedPositionsTable, TransactionHistory],
     providers: [MessageService],
     template: `
         <p-toast />
@@ -63,21 +52,17 @@ import { TransactionHistory } from '../components/transaction-history';
                                 </tr>
                             </ng-template>
                             <ng-template #emptymessage>
-                                <tr><td colspan="4" class="text-center text-muted-color p-6">No portfolios yet.</td></tr>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted-color p-6">No portfolios yet.</td>
+                                </tr>
                             </ng-template>
                         </p-table>
                     </div>
                 </div>
 
                 <div class="col-span-12 xl:col-span-8">
-                    <app-positions-table
-                        title="Holdings (all portfolios)"
-                        [positions]="ov.portfolio.positions"
-                        [baseCurrency]="ov.portfolio.base_currency"
-                        (historyClick)="openHistory($event)" />
-                    <app-closed-positions-table
-                        [closedPositions]="ov.portfolio.closed_positions"
-                        [baseCurrency]="ov.portfolio.base_currency" />
+                    <app-positions-table title="Holdings (all portfolios)" [positions]="ov.portfolio.positions" [baseCurrency]="ov.portfolio.base_currency" (historyClick)="openHistory($event)" />
+                    <app-closed-positions-table [closedPositions]="ov.portfolio.closed_positions" [baseCurrency]="ov.portfolio.base_currency" />
                 </div>
             </div>
         }
@@ -90,7 +75,8 @@ import { TransactionHistory } from '../components/transaction-history';
             [lifetimePnl]="historyLifetimePnl()"
             [lifetimeReturn]="historyLifetimeReturn()"
             [baseCurrency]="overview()?.portfolio?.base_currency ?? 'EUR'"
-            [showPortfolio]="true" />
+            [showPortfolio]="true"
+        />
     `
 })
 export class OverviewPage implements OnInit {
@@ -142,8 +128,7 @@ export class OverviewPage implements OnInit {
         this.historyVisible.set(true);
         this.api.overviewTransactions(pos.symbol).subscribe({
             next: (rows) => this.historyRows.set(rows),
-            error: () =>
-                this.messages.add({ severity: 'error', summary: 'History failed', detail: pos.symbol })
+            error: () => this.messages.add({ severity: 'error', summary: 'History failed', detail: pos.symbol })
         });
     }
 
