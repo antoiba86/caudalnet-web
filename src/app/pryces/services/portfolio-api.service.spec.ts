@@ -56,9 +56,7 @@ describe('PortfolioApiService', () => {
     it('import POSTs multipart form data with the broker query param', () => {
         const file = new File(['{}'], 'ledger.json', { type: 'application/json' });
         service.import('main', file, 'degiro').subscribe();
-        const req = http.expectOne(
-            (r) => r.url === `${base}/main/transactions` && r.params.get('broker') === 'degiro'
-        );
+        const req = http.expectOne((r) => r.url === `${base}/main/transactions` && r.params.get('broker') === 'degiro');
         expect(req.request.method).toBe('POST');
         expect(req.request.body instanceof FormData).toBeTrue();
         req.flush({});
@@ -74,9 +72,7 @@ describe('PortfolioApiService', () => {
 
     it('portfolioTransactions filters by the symbol query param', () => {
         service.portfolioTransactions('main', 'AAPL').subscribe();
-        const req = http.expectOne(
-            (r) => r.url === `${base}/main/transactions` && r.params.get('symbol') === 'AAPL'
-        );
+        const req = http.expectOne((r) => r.url === `${base}/main/transactions` && r.params.get('symbol') === 'AAPL');
         expect(req.request.method).toBe('GET');
         req.flush([]);
     });

@@ -17,18 +17,7 @@ import { PortfolioApiService } from '../../services/portfolio-api.service';
 @Component({
     selector: 'app-portfolios',
     standalone: true,
-    imports: [
-        CommonModule,
-        FormsModule,
-        TableModule,
-        ToolbarModule,
-        ButtonModule,
-        DialogModule,
-        InputTextModule,
-        ToastModule,
-        ConfirmDialogModule,
-        ProgressSpinnerModule
-    ],
+    imports: [CommonModule, FormsModule, TableModule, ToolbarModule, ButtonModule, DialogModule, InputTextModule, ToastModule, ConfirmDialogModule, ProgressSpinnerModule],
     providers: [MessageService, ConfirmationService],
     template: `
         <p-toast />
@@ -62,16 +51,13 @@ import { PortfolioApiService } from '../../services/portfolio-api.service';
                             <td>{{ p.base_currency }}</td>
                             <td class="text-right">{{ p.transaction_count }}</td>
                             <td class="text-right">
-                                <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true"
-                                    (onClick)="confirmDelete($event, p)" />
+                                <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" (onClick)="confirmDelete($event, p)" />
                             </td>
                         </tr>
                     </ng-template>
                     <ng-template #emptymessage>
                         <tr>
-                            <td colspan="4" class="text-center text-muted-color p-6">
-                                No portfolios yet. Create one to get started.
-                            </td>
+                            <td colspan="4" class="text-center text-muted-color p-6">No portfolios yet. Create one to get started.</td>
                         </tr>
                     </ng-template>
                 </p-table>
@@ -160,8 +146,7 @@ export class Portfolios implements OnInit {
                 },
                 error: (err) => {
                     this.saving.set(false);
-                    const detail =
-                        err?.status === 409 ? 'A portfolio with that name already exists.' : 'Could not create portfolio.';
+                    const detail = err?.status === 409 ? 'A portfolio with that name already exists.' : 'Could not create portfolio.';
                     this.messages.add({ severity: 'error', summary: 'Create failed', detail });
                 }
             });
@@ -182,8 +167,7 @@ export class Portfolios implements OnInit {
                         this.messages.add({ severity: 'success', summary: 'Deleted', detail: p.name });
                         this.load();
                     },
-                    error: () =>
-                        this.messages.add({ severity: 'error', summary: 'Delete failed', detail: p.name })
+                    error: () => this.messages.add({ severity: 'error', summary: 'Delete failed', detail: p.name })
                 });
             }
         });

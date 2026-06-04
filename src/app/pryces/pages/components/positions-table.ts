@@ -31,7 +31,9 @@ import { money, percent, pnlClass } from '../../util/format';
                     <tr class="cursor-pointer" (click)="historyClick.emit(pos)">
                         <td>
                             <div class="font-medium">{{ pos.symbol }} <i class="pi pi-history text-muted-color text-xs ml-1"></i></div>
-                            @if (pos.name) { <div class="text-muted-color text-sm">{{ pos.name }}</div> }
+                            @if (pos.name) {
+                                <div class="text-muted-color text-sm">{{ pos.name }}</div>
+                            }
                         </td>
                         <td class="text-right">{{ pos.quantity }}</td>
                         <td class="text-right">{{ fmtCcy(pos.avg_cost, pos.currency) }}</td>
@@ -46,11 +48,17 @@ import { money, percent, pnlClass } from '../../util/format';
                                 <div class="text-muted-color text-sm" [ngClass]="cls(pos.lifetime_return_pct)">{{ pct(pos.lifetime_return_pct) }}</div>
                             }
                         </td>
-                        <td>@if (pos.broker) { <p-tag [value]="pos.broker" severity="secondary" /> }</td>
+                        <td>
+                            @if (pos.broker) {
+                                <p-tag [value]="pos.broker" severity="secondary" />
+                            }
+                        </td>
                     </tr>
                 </ng-template>
                 <ng-template #emptymessage>
-                    <tr><td colspan="10" class="text-center text-muted-color p-6">No open positions.</td></tr>
+                    <tr>
+                        <td colspan="10" class="text-center text-muted-color p-6">No open positions.</td>
+                    </tr>
                 </ng-template>
             </p-table>
         </div>
