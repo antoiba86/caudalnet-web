@@ -243,6 +243,7 @@ export class PortfolioDetail implements OnInit {
 
     brokerOptions = [
         { label: 'DEGIRO', value: 'degiro' },
+        { label: 'Trade Republic', value: 'trade_republic' },
         { label: 'Interactive Brokers', value: 'ibkr' },
         { label: 'Renta 4 (funds .xls)', value: 'renta4' },
         { label: 'Horos (movements CSV)', value: 'horos' },
