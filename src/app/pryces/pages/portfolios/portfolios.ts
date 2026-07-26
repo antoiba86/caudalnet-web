@@ -6,18 +6,21 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { FileUploadModule } from 'primeng/fileupload';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
-import { PortfolioSummary } from '../../models/portfolio.models';
+import { ImportDataResult, PortfolioSummary } from '../../models/portfolio.models';
 import { PortfolioApiService } from '../../services/portfolio-api.service';
+import { downloadBlob, exportFilename } from '../../util/download';
 
 @Component({
     selector: 'app-portfolios',
     standalone: true,
-    imports: [CommonModule, FormsModule, TableModule, ToolbarModule, ButtonModule, DialogModule, InputTextModule, ToastModule, ConfirmDialogModule, ProgressSpinnerModule],
+    imports: [CommonModule, FormsModule, TableModule, ToolbarModule, ButtonModule, DialogModule, FileUploadModule, InputTextModule, MessageModule, ToastModule, ConfirmDialogModule, ProgressSpinnerModule],
     providers: [MessageService, ConfirmationService],
     template: `
         <p-toast />
@@ -29,6 +32,8 @@ import { PortfolioApiService } from '../../services/portfolio-api.service';
                     <span class="text-xl font-semibold">Portfolios</span>
                 </ng-template>
                 <ng-template #end>
+                    <p-button label="Export" icon="pi pi-download" [outlined]="true" class="mr-2" [disabled]="exporting()" (onClick)="exportAll()" />
+                    <p-button label="Import" icon="pi pi-upload" [outlined]="true" class="mr-2" (onClick)="openImportBackup()" />
                     <p-button label="New portfolio" icon="pi pi-plus" (onClick)="openCreate()" />
                 </ng-template>
             </p-toolbar>
@@ -80,6 +85,28 @@ import { PortfolioApiService } from '../../services/portfolio-api.service';
                 <p-button label="Create" icon="pi pi-check" [disabled]="!canCreate() || saving()" (onClick)="create()" />
             </ng-template>
         </p-dialog>
+
+        <!-- Import backup dialog -->
+        <p-dialog header="Import backup" [(visible)]="importVisible" [modal]="true" [style]="{ width: '480px' }">
+            <div class="flex flex-col gap-4 pt-2">
+                <span class="text-muted-color text-sm">Restore a pryces export file. Missing portfolios are created; existing ones are merged with duplicate transactions skipped.</span>
+                <p-fileupload mode="basic" chooseLabel="Choose file" [auto]="false" [customUpload]="true" accept=".json,application/json" (onSelect)="onImportSelect($event)" />
+                @if (selectedImportFile) {
+                    <span class="text-muted-color text-sm">Selected: {{ selectedImportFile.name }}</span>
+                }
+
+                @if (importResult(); as r) {
+                    <p-message severity="success" [text]="importSummary(r)" />
+                    @for (w of r.warnings; track w) {
+                        <p-message severity="warn" [text]="w" />
+                    }
+                }
+            </div>
+            <ng-template #footer>
+                <p-button label="Close" [text]="true" (onClick)="importVisible = false" />
+                <p-button label="Import" icon="pi pi-upload" [disabled]="!selectedImportFile || importing()" (onClick)="runImportBackup()" />
+            </ng-template>
+        </p-dialog>
     `
 })
 export class Portfolios implements OnInit {
@@ -94,6 +121,12 @@ export class Portfolios implements OnInit {
 
     createVisible = false;
     form: { base_currency: string; name: string } = { base_currency: '', name: '' };
+
+    exporting = signal(false);
+    importVisible = false;
+    importing = signal(false);
+    selectedImportFile: File | null = null;
+    importResult = signal<ImportDataResult | null>(null);
 
     ngOnInit(): void {
         this.load();
@@ -150,6 +183,57 @@ export class Portfolios implements OnInit {
                     this.messages.add({ severity: 'error', summary: 'Create failed', detail });
                 }
             });
+    }
+
+    exportAll(): void {
+        this.exporting.set(true);
+        this.api.exportData().subscribe({
+            next: (blob) => {
+                this.exporting.set(false);
+                downloadBlob(blob, exportFilename());
+            },
+            error: () => {
+                this.exporting.set(false);
+                this.messages.add({ severity: 'error', summary: 'Export failed', detail: 'Could not download the backup.' });
+            }
+        });
+    }
+
+    openImportBackup(): void {
+        this.selectedImportFile = null;
+        this.importResult.set(null);
+        this.importVisible = true;
+    }
+
+    onImportSelect(event: { files: File[] }): void {
+        this.selectedImportFile = event.files?.[0] ?? null;
+        this.importResult.set(null);
+    }
+
+    runImportBackup(): void {
+        if (!this.selectedImportFile) return;
+        this.importing.set(true);
+        this.api.importData(this.selectedImportFile).subscribe({
+            next: (r) => {
+                this.importing.set(false);
+                this.importResult.set(r);
+                this.load();
+            },
+            error: (err) => {
+                this.importing.set(false);
+                let detail = 'Import failed.';
+                if (err?.status === 400) {
+                    detail = 'The file is not valid JSON.';
+                } else if (err?.status === 422) {
+                    detail = err?.error?.detail ?? 'The file is not a pryces export.';
+                }
+                this.messages.add({ severity: 'error', summary: 'Import failed', detail });
+            }
+        });
+    }
+
+    importSummary(r: ImportDataResult): string {
+        return `Portfolios: ${r.portfolios_created} created, ${r.portfolios_merged} merged, ${r.portfolios_skipped} skipped. Transactions: ${r.transactions_added} added, ${r.transactions_skipped} duplicates skipped. Manual assets replaced: ${r.manual_assets_replaced}.`;
     }
 
     confirmDelete(event: Event, p: PortfolioSummary): void {

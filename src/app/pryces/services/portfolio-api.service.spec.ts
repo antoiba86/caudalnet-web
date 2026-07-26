@@ -77,6 +77,31 @@ describe('PortfolioApiService', () => {
         req.flush([]);
     });
 
+    it('exportData GETs the export as a blob without params by default', () => {
+        service.exportData().subscribe();
+        const req = http.expectOne(`${environment.apiBaseUrl}/data/export`);
+        expect(req.request.method).toBe('GET');
+        expect(req.request.responseType).toBe('blob');
+        expect(req.request.params.has('portfolio')).toBeFalse();
+        req.flush(new Blob(['{}'], { type: 'application/json' }));
+    });
+
+    it('exportData scopes the export with the portfolio query param', () => {
+        service.exportData('main').subscribe();
+        const req = http.expectOne((r) => r.url === `${environment.apiBaseUrl}/data/export` && r.params.get('portfolio') === 'main');
+        expect(req.request.method).toBe('GET');
+        req.flush(new Blob(['{}'], { type: 'application/json' }));
+    });
+
+    it('importData POSTs the export file as multipart form data', () => {
+        const file = new File(['{}'], 'pryces_export_20260713.json', { type: 'application/json' });
+        service.importData(file).subscribe();
+        const req = http.expectOne(`${environment.apiBaseUrl}/data/import`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body instanceof FormData).toBeTrue();
+        req.flush({});
+    });
+
     it('URL-encodes the portfolio name', () => {
         service.get('my port').subscribe();
         const req = http.expectOne(`${base}/my%20port`);

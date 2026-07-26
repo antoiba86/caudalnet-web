@@ -20,6 +20,8 @@ worth — current value, profit, dividends, and proper money- and time-weighted 
 - 💸 **Closed positions** — sold-out holdings stay visible with their realized gains.
 - 🌍 **Multi-currency & funds** — stocks, ETFs and mutual funds, priced live (and
   historically) via Yahoo Finance; foreign holdings converted to your base currency.
+- 💾 **Backup & restore** — download all your data (or one portfolio) as a single JSON
+  file from the toolbar, and restore it later; re-importing merges and skips duplicates.
 - 🌗 **Light / dark theme**, responsive layout.
 
 ## Quick start
