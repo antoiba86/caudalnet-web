@@ -102,6 +102,16 @@ export interface Overview {
     breakdown: PortfolioBreakdownItem[];
 }
 
+export interface ImportDataResult {
+    portfolios_created: number;
+    portfolios_merged: number;
+    portfolios_skipped: number;
+    transactions_added: number;
+    transactions_skipped: number;
+    manual_assets_replaced: number;
+    warnings: string[];
+}
+
 export interface ImportResult {
     broker: string;
     parsed: number;

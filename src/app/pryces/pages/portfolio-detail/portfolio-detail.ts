@@ -18,6 +18,7 @@ import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ImportResult, Portfolio, Position, TransactionInput, TransactionRow } from '../../models/portfolio.models';
 import { PortfolioApiService } from '../../services/portfolio-api.service';
+import { downloadBlob, exportFilename } from '../../util/download';
 import { money, percent, pnlClass } from '../../util/format';
 import { AllocationChart } from '../components/allocation-chart';
 import { ClosedPositionsTable } from '../components/closed-positions-table';
@@ -72,6 +73,7 @@ interface TxForm {
                 <span class="text-xl font-semibold ml-2">{{ name }}</span>
             </ng-template>
             <ng-template #end>
+                <p-button label="Export" icon="pi pi-download" [outlined]="true" class="mr-2" [disabled]="exporting()" (onClick)="exportPortfolio()" />
                 <p-button label="Add transaction" icon="pi pi-plus" [outlined]="true" class="mr-2" (onClick)="openAdd()" />
                 <p-button label="Import transactions" icon="pi pi-upload" (onClick)="openImport()" />
             </ng-template>
@@ -224,6 +226,7 @@ export class PortfolioDetail implements OnInit {
     portfolio = signal<Portfolio | null>(null);
     loading = signal(false);
 
+    exporting = signal(false);
     importVisible = false;
     importing = signal(false);
     broker: string | null = null;
@@ -321,6 +324,20 @@ export class PortfolioDetail implements OnInit {
 
     fmt(value: string, currency: string): string {
         return money(value, currency);
+    }
+
+    exportPortfolio(): void {
+        this.exporting.set(true);
+        this.api.exportData(this.name).subscribe({
+            next: (blob) => {
+                this.exporting.set(false);
+                downloadBlob(blob, exportFilename(this.name));
+            },
+            error: () => {
+                this.exporting.set(false);
+                this.messages.add({ severity: 'error', summary: 'Export failed', detail: 'Could not download the backup.' });
+            }
+        });
     }
 
     openImport(): void {

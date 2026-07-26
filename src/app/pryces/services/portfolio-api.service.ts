@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@/environments/environment';
-import { CreatePortfolioBody, ImportResult, Overview, Portfolio, PortfolioSummary, TransactionInput, TransactionRow } from '../models/portfolio.models';
+import { CreatePortfolioBody, ImportDataResult, ImportResult, Overview, Portfolio, PortfolioSummary, TransactionInput, TransactionRow } from '../models/portfolio.models';
 
 @Injectable({ providedIn: 'root' })
 export class PortfolioApiService {
@@ -61,5 +61,19 @@ export class PortfolioApiService {
 
     deleteTransaction(name: string, id: string): Observable<void> {
         return this.http.delete<void>(`${this.base}/${encodeURIComponent(name)}/transactions/${encodeURIComponent(id)}`);
+    }
+
+    exportData(portfolio?: string | null): Observable<Blob> {
+        let params = new HttpParams();
+        if (portfolio) {
+            params = params.set('portfolio', portfolio);
+        }
+        return this.http.get(`${environment.apiBaseUrl}/data/export`, { params, responseType: 'blob' });
+    }
+
+    importData(file: File): Observable<ImportDataResult> {
+        const form = new FormData();
+        form.append('file', file, file.name);
+        return this.http.post<ImportDataResult>(`${environment.apiBaseUrl}/data/import`, form);
     }
 }
