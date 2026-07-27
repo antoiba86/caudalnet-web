@@ -3,7 +3,9 @@
     <head>
         <meta charset="utf-8" />
         <title>CaudalNet</title>
-        <base href="/" />
+        <!-- Relative, so the app also works when served under a dynamic path
+             prefix (Home Assistant ingress mounts it at /api/hassio_ingress/<token>/). -->
+        <base href="./" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="preconnect" href="https://primefaces.org" />
         <link rel="icon" type="image/x-icon" href="https://primefaces.org/cdn/primeng/images/favicon.png" />
