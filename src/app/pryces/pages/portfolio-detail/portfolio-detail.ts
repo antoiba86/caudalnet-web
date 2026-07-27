@@ -67,15 +67,19 @@ interface TxForm {
     template: `
         <p-toast />
 
-        <p-toolbar styleClass="mb-6">
+        <p-toolbar styleClass="mb-6 flex-wrap gap-y-3">
             <ng-template #start>
                 <p-button icon="pi pi-arrow-left" [text]="true" [rounded]="true" routerLink="/portfolios" />
                 <span class="text-xl font-semibold ml-2">{{ name }}</span>
             </ng-template>
             <ng-template #end>
-                <p-button label="Export" icon="pi pi-download" [outlined]="true" class="mr-2" [disabled]="exporting()" (onClick)="exportPortfolio()" />
-                <p-button label="Add transaction" icon="pi pi-plus" [outlined]="true" class="mr-2" (onClick)="openAdd()" />
-                <p-button label="Import transactions" icon="pi pi-upload" (onClick)="openImport()" />
+                <!-- Wraps on narrow screens: three labelled buttons in one row overflow
+                     a phone viewport, pushing the last one off the edge. -->
+                <div class="flex flex-wrap justify-end gap-2">
+                    <p-button label="Export" icon="pi pi-download" [outlined]="true" [disabled]="exporting()" (onClick)="exportPortfolio()" />
+                    <p-button label="Add transaction" icon="pi pi-plus" [outlined]="true" (onClick)="openAdd()" />
+                    <p-button label="Import transactions" icon="pi pi-upload" (onClick)="openImport()" />
+                </div>
             </ng-template>
         </p-toolbar>
 
@@ -121,7 +125,7 @@ interface TxForm {
         }
 
         <!-- Import dialog -->
-        <p-dialog header="Import transactions" [(visible)]="importVisible" [modal]="true" [style]="{ width: '480px' }">
+        <p-dialog header="Import transactions" [(visible)]="importVisible" [modal]="true" [style]="{ width: '480px' }" [breakpoints]="{ '768px': '95vw' }">
             <div class="flex flex-col gap-4 pt-2">
                 @if (lockedBroker(); as locked) {
                     <p-message severity="info" [text]="'This portfolio holds ' + locked + ' transactions — only ' + locked + ' imports are accepted.'" />
@@ -166,7 +170,7 @@ interface TxForm {
         />
 
         <!-- Add / edit transaction dialog -->
-        <p-dialog [header]="tx.id ? 'Edit transaction' : 'Add transaction'" [(visible)]="txVisible" [modal]="true" [style]="{ width: '460px' }">
+        <p-dialog [header]="tx.id ? 'Edit transaction' : 'Add transaction'" [(visible)]="txVisible" [modal]="true" [style]="{ width: '460px' }" [breakpoints]="{ '768px': '95vw' }">
             <div class="flex flex-col gap-4 pt-2">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-2">

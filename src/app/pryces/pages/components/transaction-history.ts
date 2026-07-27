@@ -12,7 +12,19 @@ import { money, percent, pnlClass } from '../../util/format';
     standalone: true,
     imports: [CommonModule, ButtonModule, DialogModule, TableModule, TagModule],
     template: `
-        <p-dialog [(visible)]="visible" [modal]="true" [style]="{ width: '720px' }" [header]="symbol() + (name() ? ' — ' + name() : '')">
+        <!-- A fixed width overflows a phone viewport and carries the header's close
+             button off-screen with it, so the dialog becomes impossible to dismiss.
+             The breakpoint keeps it inside the screen; dismissableMask gives a second
+             way out on touch. -->
+        <p-dialog
+            [(visible)]="visible"
+            [modal]="true"
+            [dismissableMask]="true"
+            [style]="{ width: '720px' }"
+            [breakpoints]="{ '768px': '95vw' }"
+            [contentStyle]="{ 'max-height': '70vh' }"
+            [header]="symbol() + (name() ? ' — ' + name() : '')"
+        >
             <div class="flex flex-wrap gap-6 mb-4">
                 <div>
                     <span class="block text-muted-color text-sm">Lifetime P&amp;L</span>
@@ -24,7 +36,9 @@ import { money, percent, pnlClass } from '../../util/format';
                 </div>
             </div>
 
-            <p-table [value]="rows()" dataKey="id" [scrollable]="true">
+            <!-- min-width keeps the columns legible and lets the row scroll sideways
+                 instead of being crushed on a narrow screen. -->
+            <p-table [value]="rows()" dataKey="id" [scrollable]="true" [tableStyle]="{ 'min-width': '44rem' }">
                 <ng-template #header>
                     <tr>
                         <th>Date</th>
