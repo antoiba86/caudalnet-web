@@ -21,13 +21,19 @@ interface LayoutState {
     providedIn: 'root'
 })
 export class LayoutService {
-    layoutConfig = signal<LayoutConfig>({
+    // Kept in sync with the pre-bootstrap script in index.html, which applies the
+    // stored theme before the first paint. Change one, change the other.
+    static readonly STORAGE_KEY = 'caudalnet.layout';
+
+    private static readonly DEFAULT_CONFIG: LayoutConfig = {
         preset: 'Aura',
         primary: 'emerald',
         surface: null,
         darkTheme: false,
         menuMode: 'static'
-    });
+    };
+
+    layoutConfig = signal<LayoutConfig>(LayoutService.initialConfig());
 
     layoutState = signal<LayoutState>({
         staticMenuDesktopInactive: false,
@@ -55,6 +61,10 @@ export class LayoutService {
     private initialized = false;
 
     constructor() {
+        // The restored theme was already applied pre-bootstrap by index.html; this
+        // keeps the class correct when that script is unavailable (e.g. in tests).
+        this.toggleDarkMode();
+
         effect(() => {
             const config = this.layoutConfig();
 
@@ -63,8 +73,44 @@ export class LayoutService {
                 return;
             }
 
+            // Persisted only once the user actually changes something, so an
+            // untouched install keeps following the OS colour scheme.
+            this.persist(config);
             this.handleDarkModeTransition(config);
         });
+    }
+
+    // Restores the whole config, not just the theme: preset, primary colour,
+    // surface and menu mode reset on reload otherwise. Falls back to the OS
+    // colour scheme the first time, before any preference has been stored.
+    private static initialConfig(): LayoutConfig {
+        const stored = LayoutService.readStoredConfig();
+        if (stored) {
+            return { ...LayoutService.DEFAULT_CONFIG, ...stored };
+        }
+        return { ...LayoutService.DEFAULT_CONFIG, darkTheme: LayoutService.prefersDarkScheme() };
+    }
+
+    private static readStoredConfig(): Partial<LayoutConfig> | null {
+        try {
+            const raw = localStorage.getItem(LayoutService.STORAGE_KEY);
+            return raw ? (JSON.parse(raw) as Partial<LayoutConfig>) : null;
+        } catch {
+            // Storage blocked or the entry is corrupt — fall back to defaults.
+            return null;
+        }
+    }
+
+    private static prefersDarkScheme(): boolean {
+        return window.matchMedia?.('(prefers-color-scheme: dark)').matches === true;
+    }
+
+    private persist(config: LayoutConfig): void {
+        try {
+            localStorage.setItem(LayoutService.STORAGE_KEY, JSON.stringify(config));
+        } catch {
+            // Private browsing or quota exceeded — the preference just won't stick.
+        }
     }
 
     private handleDarkModeTransition(config: LayoutConfig): void {
