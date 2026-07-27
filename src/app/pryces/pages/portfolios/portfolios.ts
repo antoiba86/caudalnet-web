@@ -27,14 +27,17 @@ import { downloadBlob, exportFilename } from '../../util/download';
         <p-confirmdialog [style]="{ width: '450px' }" />
 
         <div class="card">
-            <p-toolbar styleClass="mb-6">
+            <p-toolbar styleClass="mb-6 flex-wrap gap-y-3">
                 <ng-template #start>
                     <span class="text-xl font-semibold">Portfolios</span>
                 </ng-template>
                 <ng-template #end>
-                    <p-button label="Export" icon="pi pi-download" [outlined]="true" class="mr-2" [disabled]="exporting()" (onClick)="exportAll()" />
-                    <p-button label="Import" icon="pi pi-upload" [outlined]="true" class="mr-2" (onClick)="openImportBackup()" />
-                    <p-button label="New portfolio" icon="pi pi-plus" (onClick)="openCreate()" />
+                    <!-- Wraps on narrow screens; see portfolio-detail for the same reason. -->
+                    <div class="flex flex-wrap justify-end gap-2">
+                        <p-button label="Export" icon="pi pi-download" [outlined]="true" [disabled]="exporting()" (onClick)="exportAll()" />
+                        <p-button label="Import" icon="pi pi-upload" [outlined]="true" (onClick)="openImportBackup()" />
+                        <p-button label="New portfolio" icon="pi pi-plus" (onClick)="openCreate()" />
+                    </div>
                 </ng-template>
             </p-toolbar>
 
@@ -69,7 +72,7 @@ import { downloadBlob, exportFilename } from '../../util/download';
             }
         </div>
 
-        <p-dialog header="New portfolio" [(visible)]="createVisible" [modal]="true" [style]="{ width: '420px' }">
+        <p-dialog header="New portfolio" [(visible)]="createVisible" [modal]="true" [style]="{ width: '420px' }" [breakpoints]="{ '768px': '95vw' }">
             <div class="flex flex-col gap-4 pt-2">
                 <div class="flex flex-col gap-2">
                     <label for="ccy">Base currency *</label>
@@ -87,7 +90,7 @@ import { downloadBlob, exportFilename } from '../../util/download';
         </p-dialog>
 
         <!-- Import backup dialog -->
-        <p-dialog header="Import backup" [(visible)]="importVisible" [modal]="true" [style]="{ width: '480px' }">
+        <p-dialog header="Import backup" [(visible)]="importVisible" [modal]="true" [style]="{ width: '480px' }" [breakpoints]="{ '768px': '95vw' }">
             <div class="flex flex-col gap-4 pt-2">
                 <span class="text-muted-color text-sm">Restore a pryces export file. Missing portfolios are created; existing ones are merged with duplicate transactions skipped.</span>
                 <p-fileupload mode="basic" chooseLabel="Choose file" [auto]="false" [customUpload]="true" accept=".json,application/json" (onSelect)="onImportSelect($event)" />

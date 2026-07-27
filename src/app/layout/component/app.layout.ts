@@ -19,7 +19,7 @@ import { LayoutService } from '@/app/layout/service/layout.service';
             </div>
             <app-footer></app-footer>
         </div>
-        <div class="layout-mask"></div>
+        <div class="layout-mask" (click)="closeMobileMenu()"></div>
     </div> `
 })
 export class AppLayout {
@@ -34,6 +34,17 @@ export class AppLayout {
                 document.body.classList.remove('blocked-scroll');
             }
         });
+    }
+
+    // The mask covers the topbar (z-index 998 vs 997), so the hamburger is unreachable
+    // while the mobile menu is open. Without this the menu cannot be dismissed at all —
+    // the only way out is navigating away, and body scrolling stays blocked meanwhile.
+    closeMobileMenu() {
+        this.layoutService.layoutState.update((state) => ({
+            ...state,
+            mobileMenuActive: false,
+            overlayMenuActive: false
+        }));
     }
 
     containerClass = computed(() => {

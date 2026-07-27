@@ -12,7 +12,9 @@ import { money, percent, pnlClass } from '../../util/format';
     template: `
         <div class="card">
             <div class="font-semibold text-xl mb-4">{{ title() }}</div>
-            <p-table [value]="positions()" dataKey="symbol" [scrollable]="true">
+            <!-- Ten columns need far more than a phone's width; min-width lets the
+                 table scroll sideways rather than crushing every column. -->
+            <p-table [value]="positions()" dataKey="symbol" [scrollable]="true" [tableStyle]="{ 'min-width': '60rem' }">
                 <ng-template #header>
                     <tr>
                         <th>Symbol</th>

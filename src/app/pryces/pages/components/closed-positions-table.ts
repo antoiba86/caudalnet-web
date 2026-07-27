@@ -13,7 +13,7 @@ import { money, percent, pnlClass } from '../../util/format';
         @if (closedPositions().length) {
             <div class="card">
                 <div class="font-semibold text-xl mb-4">Closed positions (sold)</div>
-                <p-table [value]="closedPositions()" dataKey="symbol">
+                <p-table [value]="closedPositions()" dataKey="symbol" [scrollable]="true" [tableStyle]="{ 'min-width': '36rem' }">
                     <ng-template #header>
                         <tr>
                             <th>Symbol</th>
