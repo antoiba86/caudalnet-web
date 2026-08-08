@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
+import { SortEvent } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { Position } from '../../models/portfolio.models';
 import { money, percent, pnlClass } from '../../util/format';
+import { sortRows } from '../../util/table';
 
 @Component({
     selector: 'app-positions-table',
@@ -14,19 +16,19 @@ import { money, percent, pnlClass } from '../../util/format';
             <div class="font-semibold text-xl mb-4">{{ title() }}</div>
             <!-- Ten columns need far more than a phone's width; min-width lets the
                  table scroll sideways rather than crushing every column. -->
-            <p-table [value]="positions()" dataKey="symbol" [scrollable]="true" [tableStyle]="{ 'min-width': '60rem' }">
+            <p-table [value]="positions()" dataKey="symbol" [scrollable]="true" [tableStyle]="{ 'min-width': '60rem' }" [customSort]="true" sortField="value_base" [sortOrder]="-1" (sortFunction)="sort($event)">
                 <ng-template #header>
                     <tr>
-                        <th>Symbol</th>
-                        <th class="text-right">Qty</th>
-                        <th class="text-right">Avg cost</th>
-                        <th class="text-right">Price</th>
-                        <th class="text-right">Value</th>
-                        <th class="text-right">Unrealized</th>
-                        <th class="text-right">Realized</th>
-                        <th class="text-right">Return</th>
-                        <th class="text-right">Lifetime</th>
-                        <th>Broker</th>
+                        <th pSortableColumn="symbol">Symbol <p-sortIcon field="symbol" /></th>
+                        <th class="text-right" pSortableColumn="quantity">Qty <p-sortIcon field="quantity" /></th>
+                        <th class="text-right" pSortableColumn="avg_cost">Avg cost <p-sortIcon field="avg_cost" /></th>
+                        <th class="text-right" pSortableColumn="price">Price <p-sortIcon field="price" /></th>
+                        <th class="text-right" pSortableColumn="value_base">Value <p-sortIcon field="value_base" /></th>
+                        <th class="text-right" pSortableColumn="unrealized_pnl_base">Unrealized <p-sortIcon field="unrealized_pnl_base" /></th>
+                        <th class="text-right" pSortableColumn="realized_pnl_base">Realized <p-sortIcon field="realized_pnl_base" /></th>
+                        <th class="text-right" pSortableColumn="total_return_pct">Return <p-sortIcon field="total_return_pct" /></th>
+                        <th class="text-right" pSortableColumn="lifetime_pnl_base">Lifetime <p-sortIcon field="lifetime_pnl_base" /></th>
+                        <th pSortableColumn="broker">Broker <p-sortIcon field="broker" /></th>
                     </tr>
                 </ng-template>
                 <ng-template #body let-pos>
@@ -71,6 +73,10 @@ export class PositionsTable {
     baseCurrency = input<string>('EUR');
     title = input<string>('Positions');
     historyClick = output<Position>();
+
+    sort(event: SortEvent): void {
+        sortRows(event);
+    }
 
     fmt(value: string): string {
         return money(value, this.baseCurrency());
