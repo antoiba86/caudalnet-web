@@ -1,11 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input, model, output } from '@angular/core';
+import { SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TransactionRow } from '../../models/portfolio.models';
 import { money, percent, pnlClass } from '../../util/format';
+import { sortRows } from '../../util/table';
+import { withDerivedFields } from '../../util/transactions';
 
 @Component({
     selector: 'app-transaction-history',
@@ -30,18 +33,19 @@ import { money, percent, pnlClass } from '../../util/format';
 
             <!-- min-width keeps the columns legible and lets the row scroll sideways
                  instead of being crushed on a narrow screen. -->
-            <p-table [value]="rows()" dataKey="id" [scrollable]="true" [tableStyle]="{ 'min-width': '44rem' }">
+            <p-table [value]="sortedRows()" dataKey="id" [scrollable]="true" [tableStyle]="{ 'min-width': '50rem' }" [customSort]="true" sortField="date" [sortOrder]="-1" (sortFunction)="sort($event)">
                 <ng-template #header>
                     <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th class="text-right">Qty / amount</th>
-                        <th class="text-right">Price</th>
-                        <th class="text-right">Fee</th>
+                        <th pSortableColumn="date">Date <p-sortIcon field="date" /></th>
+                        <th pSortableColumn="type">Type <p-sortIcon field="type" /></th>
+                        <th class="text-right" pSortableColumn="sortQuantity">Qty / amount <p-sortIcon field="sortQuantity" /></th>
+                        <th class="text-right" pSortableColumn="price">Price <p-sortIcon field="price" /></th>
+                        <th class="text-right" pSortableColumn="total">Total <p-sortIcon field="total" /></th>
+                        <th class="text-right" pSortableColumn="fee">Fee <p-sortIcon field="fee" /></th>
                         @if (showPortfolio()) {
-                            <th>Portfolio</th>
+                            <th pSortableColumn="portfolio">Portfolio <p-sortIcon field="portfolio" /></th>
                         }
-                        <th>Broker</th>
+                        <th pSortableColumn="broker">Broker <p-sortIcon field="broker" /></th>
                         @if (editable()) {
                             <th class="text-right">Actions</th>
                         }
@@ -53,6 +57,7 @@ import { money, percent, pnlClass } from '../../util/format';
                         <td><p-tag [value]="t.type" [severity]="severity(t.type)" /></td>
                         <td class="text-right">{{ t.quantity ?? t.amount ?? '—' }}</td>
                         <td class="text-right">{{ t.price ? money(t.price, t.currency) : '—' }}</td>
+                        <td class="text-right">{{ t.total !== null ? money(t.total, t.currency) : '—' }}</td>
                         <td class="text-right">{{ money(t.fee, t.currency) }}</td>
                         @if (showPortfolio()) {
                             <td>{{ t.portfolio }}</td>
@@ -92,7 +97,15 @@ export class TransactionHistory {
     edit = output<TransactionRow>();
     remove = output<TransactionRow>();
 
-    columnCount = computed(() => 6 + (this.showPortfolio() ? 1 : 0) + (this.editable() ? 1 : 0));
+    // Sorting works on a derived copy: `total` is computed, not sent by the API,
+    // and the quantity/amount column needs one numeric field to sort on.
+    sortedRows = computed(() => this.rows().map(withDerivedFields));
+
+    columnCount = computed(() => 7 + (this.showPortfolio() ? 1 : 0) + (this.editable() ? 1 : 0));
+
+    sort(event: SortEvent): void {
+        sortRows(event);
+    }
 
     money(value: string | null | undefined, currency: string): string {
         return money(value, currency);

@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, input } from '@angular/core';
+import { SortEvent } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ClosedPosition } from '../../models/portfolio.models';
 import { money, percent, pnlClass } from '../../util/format';
+import { sortRows } from '../../util/table';
 
 @Component({
     selector: 'app-closed-positions-table',
@@ -13,14 +15,14 @@ import { money, percent, pnlClass } from '../../util/format';
         @if (closedPositions().length) {
             <div class="card">
                 <div class="font-semibold text-xl mb-4">Closed positions (sold)</div>
-                <p-table [value]="closedPositions()" dataKey="symbol" [scrollable]="true" [tableStyle]="{ 'min-width': '36rem' }">
+                <p-table [value]="closedPositions()" dataKey="symbol" [scrollable]="true" [tableStyle]="{ 'min-width': '36rem' }" [customSort]="true" sortField="realized_pnl_base" [sortOrder]="-1" (sortFunction)="sort($event)">
                     <ng-template #header>
                         <tr>
-                            <th>Symbol</th>
-                            <th class="text-right">Hold period</th>
-                            <th class="text-right">Realized P&amp;L</th>
-                            <th class="text-right">ROI</th>
-                            <th>Broker</th>
+                            <th pSortableColumn="symbol">Symbol <p-sortIcon field="symbol" /></th>
+                            <th class="text-right" pSortableColumn="hold_period_days">Hold period <p-sortIcon field="hold_period_days" /></th>
+                            <th class="text-right" pSortableColumn="realized_pnl_base">Realized P&amp;L <p-sortIcon field="realized_pnl_base" /></th>
+                            <th class="text-right" pSortableColumn="realized_return_pct">ROI <p-sortIcon field="realized_return_pct" /></th>
+                            <th pSortableColumn="broker">Broker <p-sortIcon field="broker" /></th>
                         </tr>
                     </ng-template>
                     <ng-template #body let-c>
@@ -49,6 +51,10 @@ import { money, percent, pnlClass } from '../../util/format';
 export class ClosedPositionsTable {
     closedPositions = input<ClosedPosition[]>([]);
     baseCurrency = input<string>('EUR');
+
+    sort(event: SortEvent): void {
+        sortRows(event);
+    }
 
     fmt(value: string): string {
         return money(value, this.baseCurrency());

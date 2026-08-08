@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input, model, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -10,6 +11,8 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TransactionRow } from '../../models/portfolio.models';
 import { money } from '../../util/format';
+import { sortRows } from '../../util/table';
+import { withDerivedFields } from '../../util/transactions';
 
 /**
  * The portfolio's complete ledger, every row editable and deletable.
@@ -43,16 +46,17 @@ import { money } from '../../util/format';
             @if (loading()) {
                 <div class="flex justify-center p-8"><p-progressspinner /></div>
             } @else {
-                <p-table [value]="filtered()" dataKey="id" [scrollable]="true" [tableStyle]="{ 'min-width': '52rem' }">
+                <p-table [value]="filtered()" dataKey="id" [scrollable]="true" [tableStyle]="{ 'min-width': '58rem' }" [customSort]="true" sortField="date" [sortOrder]="-1" (sortFunction)="sort($event)">
                     <ng-template #header>
                         <tr>
-                            <th>Date</th>
-                            <th>Symbol</th>
-                            <th>Type</th>
-                            <th class="text-right">Qty / amount</th>
-                            <th class="text-right">Price</th>
-                            <th class="text-right">Fee</th>
-                            <th>Broker</th>
+                            <th pSortableColumn="date">Date <p-sortIcon field="date" /></th>
+                            <th pSortableColumn="symbol">Symbol <p-sortIcon field="symbol" /></th>
+                            <th pSortableColumn="type">Type <p-sortIcon field="type" /></th>
+                            <th class="text-right" pSortableColumn="sortQuantity">Qty / amount <p-sortIcon field="sortQuantity" /></th>
+                            <th class="text-right" pSortableColumn="price">Price <p-sortIcon field="price" /></th>
+                            <th class="text-right" pSortableColumn="total">Total <p-sortIcon field="total" /></th>
+                            <th class="text-right" pSortableColumn="fee">Fee <p-sortIcon field="fee" /></th>
+                            <th pSortableColumn="broker">Broker <p-sortIcon field="broker" /></th>
                             <th class="text-right">Actions</th>
                         </tr>
                     </ng-template>
@@ -70,6 +74,7 @@ import { money } from '../../util/format';
                             <td><p-tag [value]="t.type" [severity]="severity(t.type)" /></td>
                             <td class="text-right">{{ t.quantity ?? t.amount ?? '—' }}</td>
                             <td class="text-right">{{ t.price ? money(t.price, t.currency) : '—' }}</td>
+                            <td class="text-right">{{ t.total !== null ? money(t.total, t.currency) : '—' }}</td>
                             <td class="text-right">{{ money(t.fee, t.currency) }}</td>
                             <td>
                                 @if (t.broker) {
@@ -84,7 +89,7 @@ import { money } from '../../util/format';
                     </ng-template>
                     <ng-template #emptymessage>
                         <tr>
-                            <td colspan="8" class="text-center text-muted-color p-6">
+                            <td colspan="9" class="text-center text-muted-color p-6">
                                 {{ rows().length ? 'No transactions match the filter.' : 'No transactions.' }}
                             </td>
                         </tr>
@@ -109,11 +114,19 @@ export class AllTransactions {
 
     private priced = computed(() => new Set(this.pricedSymbols().map((s) => s.toUpperCase())));
 
+    // Totals are derived, not sent by the API, so the rows are mapped before
+    // they reach the table — sorting needs a real field to sort on.
+    private views = computed(() => this.rows().map(withDerivedFields));
+
     filtered = computed(() => {
         const needle = this.filterText().trim().toLowerCase();
-        if (!needle) return this.rows();
-        return this.rows().filter((t) => `${t.symbol} ${t.broker ?? ''} ${t.date}`.toLowerCase().includes(needle));
+        if (!needle) return this.views();
+        return this.views().filter((t) => `${t.symbol} ${t.broker ?? ''} ${t.date}`.toLowerCase().includes(needle));
     });
+
+    sort(event: SortEvent): void {
+        sortRows(event);
+    }
 
     unpricedCount = computed(() => this.rows().filter((t) => this.isUnpriced(t)).length);
 
