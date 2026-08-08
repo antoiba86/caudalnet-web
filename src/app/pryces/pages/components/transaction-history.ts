@@ -16,15 +16,7 @@ import { money, percent, pnlClass } from '../../util/format';
              button off-screen with it, so the dialog becomes impossible to dismiss.
              The breakpoint keeps it inside the screen; dismissableMask gives a second
              way out on touch. -->
-        <p-dialog
-            [(visible)]="visible"
-            [modal]="true"
-            [dismissableMask]="true"
-            [style]="{ width: '720px' }"
-            [breakpoints]="{ '768px': '95vw' }"
-            [contentStyle]="{ 'max-height': '70vh' }"
-            [header]="symbol() + (name() ? ' — ' + name() : '')"
-        >
+        <p-dialog [(visible)]="visible" [modal]="true" [dismissableMask]="true" [style]="{ width: '720px' }" [breakpoints]="{ '768px': '95vw' }" [contentStyle]="{ 'max-height': '70vh' }" [header]="symbol() + (name() ? ' — ' + name() : '')">
             <div class="flex flex-wrap gap-6 mb-4">
                 <div>
                     <span class="block text-muted-color text-sm">Lifetime P&amp;L</span>

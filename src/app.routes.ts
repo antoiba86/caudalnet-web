@@ -11,7 +11,11 @@ export const appRoutes: Routes = [
                 path: '',
                 loadComponent: () => import('./app/pryces/pages/overview/overview').then((m) => m.OverviewPage)
             },
-            { path: 'portfolios', loadChildren: () => import('./app/pryces/pages/pryces.routes') }
+            { path: 'portfolios', loadChildren: () => import('./app/pryces/pages/pryces.routes') },
+            {
+                path: 'symbol-map',
+                loadComponent: () => import('./app/pryces/pages/symbol-map/symbol-map').then((m) => m.SymbolMapPage)
+            }
         ]
     },
     { path: 'notfound', component: Notfound },

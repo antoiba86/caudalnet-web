@@ -27,7 +27,8 @@ export class AppMenu {
                 label: 'Portfolio',
                 items: [
                     { label: 'Overview', icon: 'pi pi-fw pi-chart-pie', routerLink: ['/'] },
-                    { label: 'Portfolios', icon: 'pi pi-fw pi-wallet', routerLink: ['/portfolios'] }
+                    { label: 'Portfolios', icon: 'pi pi-fw pi-wallet', routerLink: ['/portfolios'] },
+                    { label: 'Symbol map', icon: 'pi pi-fw pi-link', routerLink: ['/symbol-map'] }
                 ]
             }
         ];

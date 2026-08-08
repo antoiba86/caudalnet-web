@@ -18,8 +18,9 @@ import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ImportResult, Portfolio, Position, TransactionInput, TransactionRow } from '../../models/portfolio.models';
 import { PortfolioApiService } from '../../services/portfolio-api.service';
-import { downloadBlob, exportFilename } from '../../util/download';
+import { downloadBlob, exportFilename, sampleFilename } from '../../util/download';
 import { money, percent, pnlClass } from '../../util/format';
+import { AllTransactions } from '../components/all-transactions';
 import { AllocationChart } from '../components/allocation-chart';
 import { ClosedPositionsTable } from '../components/closed-positions-table';
 import { PositionsTable } from '../components/positions-table';
@@ -58,6 +59,7 @@ interface TxForm {
         ToastModule,
         ProgressSpinnerModule,
         StatCards,
+        AllTransactions,
         AllocationChart,
         PositionsTable,
         ClosedPositionsTable,
@@ -77,6 +79,8 @@ interface TxForm {
                      a phone viewport, pushing the last one off the edge. -->
                 <div class="flex flex-wrap justify-end gap-2">
                     <p-button label="Export" icon="pi pi-download" [outlined]="true" [disabled]="exporting()" (onClick)="exportPortfolio()" />
+                    <p-button label="Sample file" icon="pi pi-file-export" [outlined]="true" [disabled]="samplingFile()" (onClick)="exportSample()" />
+                    <p-button label="All transactions" icon="pi pi-list" [outlined]="true" (onClick)="openAllTransactions()" />
                     <p-button label="Add transaction" icon="pi pi-plus" [outlined]="true" (onClick)="openAdd()" />
                     <p-button label="Import transactions" icon="pi pi-upload" (onClick)="openImport()" />
                 </div>
@@ -140,10 +144,32 @@ interface TxForm {
                     <span class="text-muted-color text-sm">Selected: {{ selectedFile.name }}</span>
                 }
 
+                @if (importError(); as e) {
+                    <p-message severity="error">
+                        <span class="whitespace-pre-wrap break-words text-sm">{{ e }}</span>
+                    </p-message>
+                }
+
                 @if (result(); as r) {
                     <p-message severity="success" [text]="resultSummary(r)" />
                     @if (r.unresolved_symbols.length) {
-                        <p-message severity="warn" [text]="'Unresolved symbols: ' + r.unresolved_symbols.join(', ')" />
+                        <!-- Each one links straight to the symbol map with the name
+                             pre-filled: these are 37-character fund names nobody
+                             should have to retype. -->
+                        <p-message severity="warn">
+                            <div class="flex flex-col gap-2 text-sm">
+                                <span>
+                                    {{ r.skipped_unresolved }} row(s) were <strong>not imported</strong> — these instruments could not be matched to a ticker, so they could not be priced. Map them below, then import the same file again to bring the
+                                    rows in.
+                                </span>
+                                @for (s of r.unresolved_symbols; track s) {
+                                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                                        <span class="font-medium break-all">{{ s }}</span>
+                                        <p-button label="Map it" icon="pi pi-link" size="small" [text]="true" [routerLink]="['/symbol-map']" [queryParams]="{ key: s }" (onClick)="importVisible = false" />
+                                    </div>
+                                }
+                            </div>
+                        </p-message>
                     }
                     @for (w of r.warnings; track w) {
                         <p-message severity="warn" [text]="w" />
@@ -155,6 +181,8 @@ interface TxForm {
                 <p-button label="Import" icon="pi pi-upload" [disabled]="!selectedFile || importing()" (onClick)="runImport()" />
             </ng-template>
         </p-dialog>
+
+        <app-all-transactions [(visible)]="allTxVisible" [rows]="allTxRows()" [loading]="allTxLoading()" [pricedSymbols]="pricedSymbols()" (edit)="openEdit($event)" (remove)="confirmDelete($event)" (refresh)="loadAllTransactions()" />
 
         <app-transaction-history
             [(visible)]="historyVisible"
@@ -231,11 +259,19 @@ export class PortfolioDetail implements OnInit {
     loading = signal(false);
 
     exporting = signal(false);
+    samplingFile = signal(false);
     importVisible = false;
     importing = signal(false);
     broker: string | null = null;
     selectedFile: File | null = null;
     result = signal<ImportResult | null>(null);
+    // Kept in the dialog rather than only in a toast: an import failure names
+    // the file's actual header, which the user needs to read and compare.
+    importError = signal<string | null>(null);
+
+    allTxVisible = signal(false);
+    allTxRows = signal<TransactionRow[]>([]);
+    allTxLoading = signal(false);
 
     historyVisible = signal(false);
     historySymbol = signal('');
@@ -299,6 +335,35 @@ export class PortfolioDetail implements OnInit {
         });
     }
 
+    // Symbols the API could price. A ledger row outside this set is one the
+    // positions view silently drops, which is what makes it unreachable
+    // anywhere else in the UI.
+    pricedSymbols = computed(() => {
+        const pf = this.portfolio();
+        if (!pf) return [];
+        return [...pf.positions.map((p) => p.symbol), ...pf.closed_positions.map((p) => p.symbol)];
+    });
+
+    openAllTransactions(): void {
+        this.allTxVisible.set(true);
+        this.loadAllTransactions();
+    }
+
+    loadAllTransactions(): void {
+        this.allTxLoading.set(true);
+        this.api.portfolioTransactions(this.name).subscribe({
+            next: (rows) => {
+                this.allTxRows.set(rows);
+                this.allTxLoading.set(false);
+            },
+            error: (err: { error?: { detail?: string } }) => {
+                this.allTxLoading.set(false);
+                const detail = err?.error?.detail ?? 'Could not load the transactions.';
+                this.messages.add({ severity: 'error', summary: 'Load failed', detail });
+            }
+        });
+    }
+
     openHistory(pos: Position): void {
         this.historySymbol.set(pos.symbol);
         this.historyName.set(pos.name ?? null);
@@ -330,6 +395,34 @@ export class PortfolioDetail implements OnInit {
         return money(value, currency);
     }
 
+    exportSample(): void {
+        this.samplingFile.set(true);
+        this.api.exportSample(this.name).subscribe({
+            next: (blob) => {
+                this.samplingFile.set(false);
+                downloadBlob(blob, sampleFilename(this.name));
+                this.messages.add({
+                    severity: 'success',
+                    summary: 'Sample downloaded',
+                    detail: "Anonymised example file in this portfolio's broker format."
+                });
+            },
+            error: async (err: { error?: Blob; status?: number }) => {
+                this.samplingFile.set(false);
+                // responseType 'blob' means the error body is a Blob too, so the
+                // API's explanation has to be read out of it rather than accessed.
+                let detail = 'Could not build a sample file.';
+                try {
+                    const text = err?.error instanceof Blob ? await err.error.text() : '';
+                    detail = JSON.parse(text)?.detail ?? detail;
+                } catch {
+                    /* keep the fallback */
+                }
+                this.messages.add({ severity: 'error', summary: 'Sample failed', detail });
+            }
+        });
+    }
+
     exportPortfolio(): void {
         this.exporting.set(true);
         this.api.exportData(this.name).subscribe({
@@ -346,6 +439,7 @@ export class PortfolioDetail implements OnInit {
 
     openImport(): void {
         this.result.set(null);
+        this.importError.set(null);
         this.selectedFile = null;
         this.broker = null;
         this.importVisible = true;
@@ -354,11 +448,13 @@ export class PortfolioDetail implements OnInit {
     onSelect(event: { files: File[] }): void {
         this.selectedFile = event.files?.[0] ?? null;
         this.result.set(null);
+        this.importError.set(null);
     }
 
     runImport(): void {
         if (!this.selectedFile) return;
         this.importing.set(true);
+        this.importError.set(null);
         this.api.import(this.name, this.selectedFile, this.broker).subscribe({
             next: (r) => {
                 this.importing.set(false);
@@ -367,19 +463,32 @@ export class PortfolioDetail implements OnInit {
             },
             error: (err) => {
                 this.importing.set(false);
-                let detail = 'Import failed.';
-                if (err?.status === 409) {
-                    detail = err?.error?.detail ?? 'This portfolio only accepts one broker.';
-                } else if (err?.status === 422) {
-                    detail = 'Unrecognized file format for the selected broker.';
-                }
+                const detail = this.importErrorDetail(err);
+                // Shown in the dialog *and* as a toast: the dialog copy survives
+                // long enough to read, since it now carries the file's header.
+                this.importError.set(detail);
                 this.messages.add({ severity: 'error', summary: 'Import failed', detail });
             }
         });
     }
 
+    private importErrorDetail(err: { status?: number; error?: { detail?: string } }): string {
+        // Always prefer the server's explanation — it names which importers were
+        // tried, the detected encoding, and the file's first line. Only fall back
+        // to generic copy when the API said nothing useful.
+        const detail = err?.error?.detail;
+        if (typeof detail === 'string' && detail.trim()) return detail;
+        if (err?.status === 409) return 'This portfolio only accepts one broker.';
+        if (err?.status === 422) return 'Unrecognized file format for the selected broker.';
+        return 'Import failed.';
+    }
+
     resultSummary(r: ImportResult): string {
-        return `Broker ${r.broker}: parsed ${r.parsed}, inserted ${r.inserted}, duplicates ${r.duplicates}.`;
+        const parts = [`parsed ${r.parsed}`, `inserted ${r.inserted}`, `duplicates ${r.duplicates}`];
+        if (r.skipped_unresolved) {
+            parts.push(`skipped ${r.skipped_unresolved}`);
+        }
+        return `Broker ${r.broker}: ${parts.join(', ')}.`;
     }
 
     openAdd(): void {
@@ -455,6 +564,9 @@ export class PortfolioDetail implements OnInit {
             this.api.portfolioTransactions(this.name, this.historySymbol()).subscribe({
                 next: (rows) => this.historyRows.set(rows)
             });
+        }
+        if (this.allTxVisible()) {
+            this.loadAllTransactions();
         }
     }
 

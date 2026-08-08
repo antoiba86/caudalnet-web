@@ -46,6 +46,46 @@ describe('PortfolioApiService', () => {
         req.flush(null);
     });
 
+    it('portfolioTransactions filters by symbol when one is given', () => {
+        service.portfolioTransactions('main', 'AAPL').subscribe();
+        const req = http.expectOne((r) => r.url === `${base}/main/transactions`);
+        expect(req.request.params.get('symbol')).toBe('AAPL');
+        req.flush([]);
+    });
+
+    it('portfolioTransactions omits the symbol param to fetch the whole ledger', () => {
+        // Without this there is no way to reach rows the positions view drops
+        // because their symbol never resolved to a tradable ticker.
+        service.portfolioTransactions('main').subscribe();
+        const req = http.expectOne((r) => r.url === `${base}/main/transactions`);
+        expect(req.request.params.has('symbol')).toBe(false);
+        req.flush([]);
+    });
+
+    it('symbolMap GETs the mapping list', () => {
+        service.symbolMap().subscribe();
+        const req = http.expectOne(`${environment.apiBaseUrl}/symbol-map`);
+        expect(req.request.method).toBe('GET');
+        req.flush([]);
+    });
+
+    it('setSymbolMapping PUTs the ticker, encoding a product-name key', () => {
+        // Fund names carry spaces and commas, so the key must survive as one
+        // path segment rather than splitting the route.
+        service.setSymbolMapping('HOROS VALUE INTERNACIONAL, FI', '0P0001DFE8.F').subscribe();
+        const req = http.expectOne(`${environment.apiBaseUrl}/symbol-map/HOROS%20VALUE%20INTERNACIONAL%2C%20FI`);
+        expect(req.request.method).toBe('PUT');
+        expect(req.request.body).toEqual({ ticker: '0P0001DFE8.F' });
+        req.flush({ key: 'HOROS VALUE INTERNACIONAL, FI', ticker: '0P0001DFE8.F', verified: true });
+    });
+
+    it('deleteSymbolMapping DELETEs the encoded key', () => {
+        service.deleteSymbolMapping('R4 MULTIGESTION NUMANTIA PATR. GLOBAL').subscribe();
+        const req = http.expectOne(`${environment.apiBaseUrl}/symbol-map/R4%20MULTIGESTION%20NUMANTIA%20PATR.%20GLOBAL`);
+        expect(req.request.method).toBe('DELETE');
+        req.flush(null);
+    });
+
     it('deleteTransaction DELETEs the addressed row', () => {
         service.deleteTransaction('main', 'abc').subscribe();
         const req = http.expectOne(`${base}/main/transactions/abc`);

@@ -117,6 +117,21 @@ export interface ImportResult {
     parsed: number;
     inserted: number;
     duplicates: number;
+    // Rows dropped because their instrument had no ticker. Distinct from
+    // duplicates: these were never stored, and a re-import after mapping the
+    // symbol brings them in.
+    skipped_unresolved: number;
     unresolved_symbols: string[];
     warnings: string[];
+}
+
+// One entry of the user-maintained symbol map. `verified` reflects whether the
+// ticker actually quoted when the mapping was saved: true/false, or null when
+// no check ran (Yahoo unreachable).
+export interface SymbolMapping {
+    key: string;
+    ticker: string;
+    verified?: boolean | null;
+    name?: string | null;
+    currency?: string | null;
 }
