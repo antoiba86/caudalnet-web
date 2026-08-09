@@ -289,6 +289,7 @@ export class PortfolioDetail implements OnInit {
         { label: 'Trade Republic', value: 'trade_republic' },
         { label: 'Interactive Brokers', value: 'ibkr' },
         { label: 'Renta 4 (funds .xls)', value: 'renta4' },
+        { label: 'Renta 4 (pension plans .xls)', value: 'renta4_pensions' },
         { label: 'Horos (movements CSV)', value: 'horos' },
         { label: 'JSON ledger', value: 'json' }
     ];
